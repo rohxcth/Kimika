@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "WebFetch(domain:afr.com)",
+      "WebFetch(domain:www.afr.com)",
+      "WebFetch(domain:bloomberg.com)",
+      "WebFetch(domain:www.bloomberg.com)",
+      "WebFetch(domain:wsj.com)",
+      "WebFetch(domain:www.wsj.com)",
+      "WebFetch(domain:ft.com)",
+      "WebFetch(domain:www.ft.com)",
+      "WebFetch(domain:theaustralian.com.au)",
+      "WebFetch(domain:www.theaustralian.com.au)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Bash|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/run_tests.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

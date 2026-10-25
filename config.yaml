@@ -1,0 +1,75 @@
+# Kimika configuration
+# All tuneable constants live here. Never hard-code these in Python.
+
+schedule:
+  # Daily run time in Sydney local time (AEDT UTC+11 / AEST UTC+10)
+  run_hour: 6
+  run_minute: 30
+  timezone: "Australia/Sydney"
+
+# Google Gemini models and per-model daily request caps (free tier).
+# Check current limits at https://aistudio.google.com/  — update here, not in code.
+gemini:
+  # Flash: full deal reports and Economy & Markets report
+  flash_model: "gemini-2.0-flash"
+  flash_daily_cap: 1500        # free-tier requests/day (check AI Studio)
+  # Flash-Lite: discovery, classification, deal wrap, helper summaries
+  flash_lite_model: "gemini-2.0-flash-lite"
+  flash_lite_daily_cap: 1500   # free-tier requests/day (check AI Studio)
+  # Back-off on 429: wait this many seconds before retrying (doubles each retry)
+  backoff_base_seconds: 60
+  backoff_max_retries: 3
+
+# Cross-verification tolerances (fraction, e.g. 0.01 = 1%)
+crosscheck:
+  price_tolerance: 0.01        # market prices must agree within 1%
+  yield_tolerance_bps: 5       # bond yields within 5 bps
+  fx_tolerance: 0.005          # FX rates within 0.5%
+  max_sources_required: 2      # minimum independent sources to call Verified
+
+# Deal research limits (free-tier friendly)
+pipeline:
+  # Max full reports per run (Flash quota guard: stop before hitting the cap)
+  max_full_reports_per_run: 5
+  # Characters to trim each document to before sending to the model
+  doc_trim_chars: 8000
+  # Cache TTL in hours (documents and LLM responses stored by content hash)
+  cache_ttl_hours: 24
+
+# Blocked domains (never fetch these — paywalled or login-required)
+blocklist:
+  - "afr.com"
+  - "bloomberg.com"
+  - "wsj.com"
+  - "ft.com"
+  - "reuters.com"           # paywalled articles; public wires (e.g. globenewswire) are fine
+  - "theaustralian.com.au"
+  - "thetimes.co.uk"
+  - "mergermarket.com"
+  - "pitchbook.com"
+  - "capitaliq.com"
+  - "refinitiv.com"
+
+# SEC EDGAR requires a User-Agent with a contact email (set via env var SEC_USER_AGENT)
+edgar:
+  base_url: "https://efts.sec.gov/LATEST/search-index"
+  submissions_url: "https://data.sec.gov/submissions"
+  rate_limit_seconds: 0.5      # be polite: no more than 2 requests/second
+
+# ASX announcements feed
+asx:
+  feed_url: "https://www.asx.com.au/asx/1/announcement"
+  rate_limit_seconds: 1.0
+
+# UK RNS / Regulatory News Service
+rns:
+  feed_url: "https://www.londonstockexchange.com/exchange/news/market-news/market-news-home.html"
+  rate_limit_seconds: 1.0
+
+# FMP (Financial Modeling Prep) — free plan
+fmp:
+  base_url: "https://financialmodelingprep.com/api/v3"
+
+# Reports output directory
+reports:
+  output_dir: "reports"
