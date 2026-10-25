@@ -1,0 +1,63 @@
+{
+  "slug": "global-resources-plc-northern-mining-ltd-mafull-uk-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "ma_full",
+  "region": "UK",
+  "title": "Global Resources PLC / Northern Mining Ltd: \u00a31.8bn scheme",
+  "key_takeaways": [
+    "Global Resources PLC makes a firm offer (Rule 2.7) for Northern Mining Ltd at 620p per share, a 28.4% premium to the undisturbed close of 483p on 10 Oct 2026.",
+    "Implied equity value \u00a31.81bn (US$2.25bn at GBP/USD 1.24); implied EV/EBITDA 9.8x on FY26E EBITDA of \u00a3215m, in line with the sector median of 9.5x.",
+    "Northern Mining board has issued a unanimous recommendation; CMA clearance and UK scheme vote required; completion targeted Q2 2027."
+  ],
+  "sections": {
+    "1_deal_snapshot": "| | |\n|---|---|\n| **Bidder** | Global Resources PLC (LSE: GRP) |\n| **Target** | Northern Mining Ltd (LSE: NML) |\n| **Structure** | Court-sanctioned scheme of arrangement |\n| **Consideration** | 620p cash per share |\n| **Premium** | 28.4% to undisturbed close of 483p (10 Oct 2026) |\n| **Implied equity value** | \u00a31.81bn (US$2.25bn at GBP/USD 1.24) |\n| **Implied EV** | \u00a32.10bn (inc. \u00a3290m net debt) |\n| **EV/EBITDA** | 9.8x (FY26E EBITDA \u00a3215m per broker consensus) |\n| **Board recommendation** | Unanimous; subject to no superior proposal |\n| **Conditions** | CMA Phase 1 clearance, shareholder vote (75% by value, majority headcount), court sanction |\n| **Expected timetable** | Scheme document Q1 2027; vote Q1 2027; completion Q2 2027 |\n| **Advisers (bidder)** | Barclays (financial), Linklaters (legal) |\n| **Advisers (target)** | Goldman Sachs (financial), Freshfields (legal) |",
+    "2_strategic_rationale": "Global Resources cited Northern Mining's high-grade copper and zinc assets in Northern England as complementary to its existing Australian and Canadian portfolio. Management guided to pre-tax synergies of \u00a328m per annum by year two, primarily from shared processing infrastructure and procurement savings. The Northern Mining board described the offer as representing full value given the current commodity cycle and the execution risk of developing the Pennine expansion independently.",
+    "3_process_and_negotiations": "- **15 Sep 2026** Global Resources made a confidential approach at 570p; Northern Mining board rejected it as inadequate.\n- **30 Sep 2026** Global Resources submitted a revised approach at 610p. Northern Mining granted three weeks of limited due diligence access.\n- **21 Oct 2026** Parties agreed terms at 620p. Global Resources issued a Rule 2.4 possible offer announcement.\n- **26 Oct 2026** Global Resources published a Rule 2.7 firm offer announcement with cash confirmation from Barclays.",
+    "4_valuation": "No independent expert report is required under UK Takeover Code; Global Resources' financial adviser, Barclays, has provided a fairness opinion included in the Rule 2.7 announcement.\n\n| Method | Range | Offer |\n|---|---|---|\n| Trading comps (EV/EBITDA) | 8.0x-11.5x (sector median 9.5x) | 9.8x |\n| Undisturbed close premium | - | 28.4% |\n| 1-month VWAP premium | - | 25.1% |\n| 52-week high | 540p | 620p (+14.8%) |\n\nThe 9.8x EV/EBITDA is modestly above the sector median. Pre-announcement broker price targets were 490p-560p; the offer is above the top of that range.",
+    "5_structure_terms_financing": "The acquisition proceeds as a UK court-sanctioned scheme under the Companies Act 2006, requiring approval by 75% by value and a majority in number of Northern Mining shareholders voting, followed by High Court sanction. CMA Phase 1 review is required; the parties expect a standard clearance given limited overlap in UK mining assets.\n\nGlobal Resources has confirmed the \u00a31.81bn consideration is fully funded from a \u00a31.2bn bridge facility (Barclays and HSBC as mandated lead arrangers) and \u00a3610m from existing cash. A break fee of \u00a318.1m (1.0% of equity value) is payable by Northern Mining in specified circumstances; a reverse break fee of \u00a318.1m is payable by Global Resources if CMA clearance is not obtained.",
+    "6_advisers": "| Role | Adviser |\n|---|---|\n| Bidder: financial | Barclays (also providing cash confirmation) |\n| Bidder: legal | Linklaters |\n| Target: financial | Goldman Sachs |\n| Target: legal | Freshfields Bruckhaus Deringer |",
+    "7_market_view": "Northern Mining shares opened at 617p on announcement, up 27.7% from Friday's close of 483p, with a ~3p arb spread (0.5% to offer). The narrow spread indicates the market views completion as near-certain. Broker commentary flagged CMA Phase 1 as the sole meaningful risk; analysts noted the limited UK overlap reduces the likelihood of a phase 2 referral materially. No major shareholder dissent as of the announcement date.",
+    "8_outlook_and_scenarios": "**Base case (consensus):** Scheme document dispatched Q1 2027, CMA Phase 1 clearance within 40 working days, shareholder vote Q1 2027, court sanction, and completion Q2 2027.\n\n**Scenario: CMA Phase 2 referral** Unlikely given limited UK asset overlap, but a Phase 2 referral would extend the timetable by 6-9 months and widen the arb spread meaningfully. Both parties' existing UK market shares in copper extraction are below 5%.\n\n**Scenario: superior proposal** A competing bidder would face the \u00a318.1m break fee and the notification and matching rights extended to Global Resources. The 9.8x EV/EBITDA leaves limited room for a materially higher bid at current commodity prices.\n\n**Scenario: shareholder vote fails** Unlikely at a 28.4% premium; institutional holders represent approximately 70% of the register."
+  },
+  "verification_log": [
+    {
+      "figure": "Undisturbed close (10 Oct 2026)",
+      "value": "483p",
+      "status": "\u2753 Single source",
+      "sources": ["Rule 2.7 announcement"],
+      "note": "Share price not yet cross-verified against FMP/yfinance (sample data)."
+    },
+    {
+      "figure": "GBP/USD rate",
+      "value": "1.24",
+      "status": "\u2753 Single source",
+      "sources": ["Rule 2.7 announcement"],
+      "note": "FX not yet cross-verified (sample data)."
+    },
+    {
+      "figure": "EV/EBITDA (9.8x)",
+      "value": "9.8x",
+      "status": "\ud83d\udd01 Recomputed",
+      "sources": ["Rule 2.7 announcement (EV \u00a32.10bn)", "broker consensus (EBITDA \u00a3215m)"],
+      "note": "2100 / 215 = 9.77x. Rounded to 9.8x."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "Global Resources PLC: Rule 2.7 Firm Offer Announcement",
+      "publisher": "London Stock Exchange RNS",
+      "date": "2026-10-26",
+      "url": "https://www.londonstockexchange.com/news/GRP_Rule27_2026.pdf",
+      "category": "Filings & announcements"
+    }
+  ],
+  "metadata": {
+    "acquirer": "Global Resources PLC",
+    "target": "Northern Mining Ltd",
+    "deal_value_usd": 2250,
+    "structure": "scheme",
+    "region": "UK",
+    "status": "announced"
+  },
+  "updated_at": "2026-10-26T07:10:00Z"
+}

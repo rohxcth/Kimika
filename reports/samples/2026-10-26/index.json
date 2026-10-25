@@ -9,5 +9,27 @@
     "deal_value_usd": 1300,
     "updated_at": "2026-10-26T06:42:00Z",
     "has_pdf": false
+  },
+  {
+    "slug": "global-resources-plc-northern-mining-ltd-mafull-uk-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "ma_full",
+    "region": "UK",
+    "title": "Global Resources PLC / Northern Mining Ltd: £1.8bn scheme",
+    "summary": "Global Resources PLC makes a firm offer for Northern Mining Ltd at 620p per share, a 28.4% premium to the undisturbed price.",
+    "deal_value_usd": 2250,
+    "updated_at": "2026-10-26T07:10:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "techco-inc-startup-labs-us-450m-spa-mafull-us-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "ma_full",
+    "region": "US",
+    "title": "TechCo Inc / Startup Labs: US$450m acquisition",
+    "summary": "TechCo Inc acquires Startup Labs for US$450m in cash, a 24.7% premium to the 30-day VWAP.",
+    "deal_value_usd": 450,
+    "updated_at": "2026-10-26T07:30:00Z",
+    "has_pdf": false
   }
 ]

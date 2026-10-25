@@ -1,142 +1,186 @@
 /* ── Kimika page styles ── */
 
-/* Section labels */
-.section-label {
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #9ca3af;
-  margin-bottom: 1rem;
-}
-
-.subsection-label {
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-}
-
-/* Cards */
-.card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-
-.card-header {
+/* ── 8-column horizontal scroll layout ── */
+.col-scroll {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
-  justify-content: space-between;
-  padding: 0.875rem 1rem;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.1s;
+  overflow-x: auto;
+  min-height: calc(100vh - 88px);
+  gap: 0;
 }
-.card-header:hover { background: #f9fafb; }
 
-/* Badges */
-.badge-type {
-  font-size: 0.625rem;
+.col {
+  flex: 0 0 288px;
+  min-height: calc(100vh - 88px);
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.col:last-child { border-right: none; }
+
+.col-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.625rem;
+  border-bottom: 2px solid #0f2044;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.col-label {
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: #0f2044;
+}
+
+.col-count {
+  font-size: 0.6rem;
+  font-weight: 600;
   background: #0f2044;
   color: white;
-  padding: 0.15rem 0.45rem;
-  border-radius: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
 }
 
-.badge-region {
-  font-size: 0.625rem;
-  font-weight: 600;
-  color: #1d4ed8;
-  background: #eff6ff;
-  padding: 0.15rem 0.45rem;
-  border-radius: 0.25rem;
+.col-body {
+  flex: 1;
+  padding: 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  background: #f5f5f3;
 }
 
-/* PDF buttons */
-.btn-pdf {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  background: #1d4ed8;
-  color: white;
-  padding: 0.3rem 0.75rem;
-  border-radius: 0.25rem;
-  text-decoration: none;
-  transition: background 0.1s;
-}
-.btn-pdf:hover { background: #1e40af; }
-
-.btn-pdf-disabled {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: #d1d5db;
-  border: 1px solid #e5e7eb;
-  padding: 0.3rem 0.75rem;
-  border-radius: 0.25rem;
-  cursor: not-allowed;
-}
-
-/* Deal wrap table header */
-.wrap-th {
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.col-empty {
+  font-size: 0.7rem;
   color: #9ca3af;
-  white-space: nowrap;
+  text-align: center;
+  padding: 2rem 0.5rem;
+  font-style: italic;
 }
 
-/* ── Prose-kimika: styles for markdown-rendered report sections ── */
-.prose-kimika {
+/* ── Report cards ── */
+.rcard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: box-shadow 0.1s;
+  position: relative;
+}
+.rcard:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+
+.rcard-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.375rem;
+}
+
+.rcard-title {
   font-size: 0.8125rem;
-  line-height: 1.6;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.35;
+  margin-bottom: 0.3rem;
+}
+
+.rcard-summary {
+  font-size: 0.7rem;
+  color: #6b7280;
+  line-height: 1.45;
+  margin-bottom: 0.375rem;
+}
+
+.rcard-value {
+  font-size: 0.6875rem;
+  font-weight: 600;
   color: #374151;
 }
 
-.prose-kimika p {
-  margin: 0 0 0.75rem;
+.rcard-chevron {
+  font-size: 0.5rem;
+  color: #d1d5db;
+  text-align: right;
+  line-height: 1;
 }
 
-.prose-kimika ul, .prose-kimika ol {
-  margin: 0 0 0.75rem 1.25rem;
+/* Expanded body inside rcard */
+.rcard-body {
+  border-top: 1px solid #f3f4f6;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
 }
 
-.prose-kimika li {
-  margin-bottom: 0.25rem;
+.rcard-section {
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.rcard-section:last-child { border-bottom: none; }
+
+.rcard-section-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 0.375rem;
 }
 
-.prose-kimika strong {
-  font-weight: 600;
-  color: #111827;
+/* Region badges */
+.badge-region {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.125rem 0.4rem;
+  border-radius: 0.2rem;
 }
+.badge-region-au { background: #fef3c7; color: #92400e; }
+.badge-region-us { background: #dbeafe; color: #1e40af; }
+.badge-region-uk { background: #f3e8ff; color: #6b21a8; }
+
+/* ── Prose-kimika: styles for markdown-rendered report sections ── */
+.prose-kimika {
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.prose-kimika p { margin: 0 0 0.625rem; }
+
+.prose-kimika ul, .prose-kimika ol { margin: 0 0 0.625rem 1.1rem; }
+
+.prose-kimika li { margin-bottom: 0.2rem; }
+
+.prose-kimika strong { font-weight: 600; color: #111827; }
 
 .prose-kimika h1, .prose-kimika h2, .prose-kimika h3, .prose-kimika h4 {
   font-weight: 600;
   color: #111827;
-  margin: 0.75rem 0 0.375rem;
+  margin: 0.625rem 0 0.3rem;
 }
 
-/* Tables from markdown */
 .prose-kimika table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 0.75rem;
-  margin: 0.5rem 0 0.75rem;
+  font-size: 0.7rem;
+  margin: 0.4rem 0 0.625rem;
 }
 
 .prose-kimika table th,
 .prose-kimika table td {
   border: 1px solid #e5e7eb;
-  padding: 0.375rem 0.625rem;
+  padding: 0.3rem 0.5rem;
   text-align: left;
   vertical-align: top;
 }
@@ -148,22 +192,13 @@
   white-space: nowrap;
 }
 
-/* Right-align numbers in table cells (heuristic: cell starts with digit/currency) */
-.prose-kimika table td:nth-child(2) {
-  font-family: ui-monospace, monospace;
-}
+.prose-kimika table td:nth-child(2) { font-family: ui-monospace, monospace; }
 
-/* Horizontal rule */
-.prose-kimika hr {
-  border: none;
-  border-top: 1px solid #e5e7eb;
-  margin: 1rem 0;
-}
+.prose-kimika hr { border: none; border-top: 1px solid #e5e7eb; margin: 0.75rem 0; }
 
-/* Code */
 .prose-kimika code {
   background: #f3f4f6;
-  padding: 0.1em 0.35em;
+  padding: 0.1em 0.3em;
   border-radius: 0.2em;
   font-size: 0.875em;
 }

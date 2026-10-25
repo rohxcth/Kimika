@@ -49,13 +49,13 @@ def test_index_contains_kimika_brand(client):
 
 def test_index_has_deals_section(client):
     r = client.get("/")
-    assert "deals" in r.text.lower() or "Deals" in r.text
+    assert "M&amp;A" in r.text or "M&A" in r.text
 
 
 def test_index_with_future_date_shows_empty_state(client):
     r = client.get("/?date=2099-01-01")
     assert r.status_code == 200
-    assert "2099-01-01" in r.text or "No reports" in r.text
+    assert "No M" in r.text  # "No M&A reports today." column empty state
 
 
 def test_index_with_sample_date_shows_cards(client):
@@ -72,10 +72,11 @@ def test_index_sample_date_shows_deal_title(client):
 
 
 
-def test_index_page_has_nav(client):
+def test_index_page_has_columns(client):
     r = client.get("/")
     assert "Economy" in r.text
-    assert "Markets" in r.text
+    assert "Equities" in r.text
+    assert "Currencies" in r.text
 
 
 def test_index_page_has_html_structure(client):
@@ -114,6 +115,23 @@ def test_api_index_ma_first(client):
     r = client.get(f"/api/index/{SAMPLE_DATE}")
     entries = r.json()
     assert entries[0]["report_type"] == "ma_full"
+
+
+def test_api_index_has_three_sample_reports(client):
+    r = client.get(f"/api/index/{SAMPLE_DATE}")
+    assert len(r.json()) == 3
+
+
+def test_api_index_contains_uk_report(client):
+    r = client.get(f"/api/index/{SAMPLE_DATE}")
+    regions = [e["region"] for e in r.json()]
+    assert "UK" in regions
+
+
+def test_api_index_contains_us_report(client):
+    r = client.get(f"/api/index/{SAMPLE_DATE}")
+    regions = [e["region"] for e in r.json()]
+    assert "US" in regions
 
 
 def test_api_index_missing_date_returns_empty(client):

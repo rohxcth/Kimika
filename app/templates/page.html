@@ -7,58 +7,55 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/app.css">
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased">
+<body class="bg-[#f5f5f3] text-gray-900 antialiased">
 
   <!-- Header: wordmark only -->
   <header class="bg-[#0f2044] text-white px-6 py-3">
     <span class="font-bold tracking-[0.2em] uppercase text-sm">Kimika</span>
   </header>
 
-  <main class="max-w-6xl mx-auto px-5 py-8 space-y-10">
+  <!-- Date bar -->
+  <div class="bg-white border-b border-gray-200 px-6 py-2">
+    <span class="text-xs text-gray-500 font-medium">{{ display_date }}</span>
+  </div>
 
-    <!-- Deals -->
-    <section id="deals">
-      <h2 class="section-label">Deals</h2>
+  <!-- 8-column scroll layout -->
+  <div class="col-scroll">
 
-      {% set ma_reports = entries | selectattr("report_type", "equalto", "ma_full") | list %}
-
-      {% if ma_reports %}
-      <div class="mb-4">
-        <h3 class="subsection-label">M&amp;A</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {% for entry in ma_reports %}
+    {# ------------------------------------------------------------------ #}
+    {# M&A column #}
+    {# ------------------------------------------------------------------ #}
+    {% set ma_entries = entries | selectattr("report_type", "equalto", "ma_full") | list %}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">M&amp;A</span>
+        {% if ma_entries %}<span class="col-count">{{ ma_entries | length }}</span>{% endif %}
+      </div>
+      <div class="col-body">
+        {% if ma_entries %}
+          {% for entry in ma_entries %}
           {% set report = reports.get(entry.slug) %}
-          <div class="card">
-
-            <!-- Card header -->
-            <div class="card-header" onclick="toggleCard('{{ entry.slug }}')">
-              <div class="flex-1 min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5 mb-1">
-                  <span class="badge-type">M&amp;A</span>
-                  <span class="badge-region">{{ entry.region }}</span>
-                  {% if entry.deal_value_usd %}
-                  <span class="text-xs text-gray-400 font-medium">{{ entry.deal_value_usd | format_usd }}</span>
-                  {% endif %}
-                  <span class="text-xs text-gray-300">{{ entry.date }}</span>
-                </div>
-                <h3 class="font-semibold text-gray-900 text-sm leading-snug">{{ entry.title }}</h3>
-                <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ entry.summary }}</p>
-              </div>
-              <div class="flex items-center shrink-0 ml-3">
-                <span id="arrow-{{ entry.slug }}" class="text-gray-300 text-xs">&#9654;</span>
-              </div>
+          <div class="rcard" onclick="toggleCard('{{ entry.slug }}')">
+            <div class="rcard-top">
+              <span class="badge-region badge-region-{{ entry.region | lower }}">{{ entry.region }}</span>
+              {% if entry.deal_value_usd %}
+              <span class="rcard-value">{{ entry.deal_value_usd | format_usd }}</span>
+              {% endif %}
             </div>
+            <h3 class="rcard-title">{{ entry.title }}</h3>
+            <p class="rcard-summary">{{ entry.summary }}</p>
+            <div class="rcard-chevron" id="arrow-{{ entry.slug }}">&#9660;</div>
 
             <!-- Expanded body -->
-            <div id="body-{{ entry.slug }}" class="hidden">
+            <div id="body-{{ entry.slug }}" class="hidden rcard-body" onclick="event.stopPropagation()">
               {% if report %}
               <!-- Key takeaways -->
-              <div class="bg-slate-50 border-t border-gray-100 px-4 py-3">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Key takeaways</p>
+              <div class="rcard-section">
+                <p class="rcard-section-label">Key takeaways</p>
                 <ul class="space-y-1.5">
                   {% for kt in report.key_takeaways %}
-                  <li class="flex gap-2 text-xs text-gray-700">
-                    <span class="text-[#0f2044] font-bold shrink-0 mt-0.5">&middot;</span>
+                  <li class="flex gap-2 text-xs text-gray-700 leading-snug">
+                    <span class="text-[#0f2044] font-bold shrink-0">&middot;</span>
                     <span>{{ kt }}</span>
                   </li>
                   {% endfor %}
@@ -66,34 +63,30 @@
               </div>
 
               <!-- Sections -->
-              <div class="border-t border-gray-100 px-4 py-4 space-y-5">
-                {% for sec_key, sec_html in report.rendered_sections.items() %}
-                {% if sec_html is not list %}
-                <div>
-                  <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
-                    {{ sec_key | section_title }}
-                  </h4>
-                  <div class="prose-kimika">{{ sec_html | safe }}</div>
-                </div>
-                {% endif %}
-                {% endfor %}
+              {% for sec_key, sec_html in report.rendered_sections.items() %}
+              {% if sec_html is not list %}
+              <div class="rcard-section">
+                <p class="rcard-section-label">{{ sec_key | section_title }}</p>
+                <div class="prose-kimika">{{ sec_html | safe }}</div>
               </div>
+              {% endif %}
+              {% endfor %}
 
               <!-- Verification toggle -->
               {% if report.verification_log %}
-              <div class="border-t border-gray-100 px-4 py-2.5">
+              <div class="rcard-section">
                 <button onclick="toggleVerification('{{ entry.slug }}')"
                         class="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2">
                   Verification ({{ report.verification_log | length }} figures)
                 </button>
               </div>
-              <div id="verify-{{ entry.slug }}" class="hidden border-t border-gray-100 px-4 py-3 bg-gray-50">
+              <div id="verify-{{ entry.slug }}" class="hidden rcard-section bg-gray-50">
                 <table class="w-full text-xs border-collapse">
                   <thead>
                     <tr class="text-left text-gray-400">
-                      <th class="pb-1.5 pr-3 font-medium w-40">Figure</th>
-                      <th class="pb-1.5 pr-3 font-medium w-28">Value</th>
-                      <th class="pb-1.5 pr-3 font-medium w-28">Status</th>
+                      <th class="pb-1.5 pr-3 font-medium">Figure</th>
+                      <th class="pb-1.5 pr-3 font-medium">Value</th>
+                      <th class="pb-1.5 pr-3 font-medium">Status</th>
                       <th class="pb-1.5 font-medium">Note</th>
                     </tr>
                   </thead>
@@ -113,14 +106,14 @@
 
               <!-- Bibliography -->
               {% if report.bibliography %}
-              <div class="border-t border-gray-100 px-4 py-3">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Bibliography</p>
+              <div class="rcard-section">
+                <p class="rcard-section-label">Bibliography</p>
                 <ul class="space-y-1">
                   {% for b in report.bibliography %}
                   <li class="text-xs text-gray-500">
                     <a href="{{ b.url }}" class="text-blue-600 hover:underline"
                        target="_blank" rel="noopener noreferrer">{{ b.title }}</a>
-                    - {{ b.publisher }}, {{ b.date }}
+                    &mdash; {{ b.publisher }}, {{ b.date }}
                   </li>
                   {% endfor %}
                 </ul>
@@ -128,41 +121,136 @@
               {% endif %}
 
               {% else %}
-              <div class="border-t border-gray-100 px-4 py-4 text-xs text-gray-400">
-                Report data not available.
-              </div>
+              <div class="rcard-section text-xs text-gray-400">Report data not available.</div>
               {% endif %}
             </div><!-- /body -->
 
-          </div><!-- /card -->
+          </div><!-- /rcard -->
           {% endfor %}
-        </div>
+        {% else %}
+          <div class="col-empty">No M&amp;A reports today.</div>
+        {% endif %}
       </div>
-      {% endif %}
+    </div>
 
-      <!-- Empty state -->
-      {% if not ma_reports %}
-      <div class="text-center py-16 text-gray-400">
-        <p class="font-medium">No reports for {{ display_date }}.</p>
-        <p class="text-sm mt-1">Run <code class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs">python -m app.pipeline --now</code> to generate today's reports.</p>
+    {# ------------------------------------------------------------------ #}
+    {# ECM column #}
+    {# ------------------------------------------------------------------ #}
+    {% set ecm_entries = entries | selectattr("report_type", "equalto", "ecm") | list %}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">ECM</span>
+        {% if ecm_entries %}<span class="col-count">{{ ecm_entries | length }}</span>{% endif %}
       </div>
-      {% endif %}
-    </section>
-
-    <!-- Economy & Markets -->
-    <section id="markets">
-      <h2 class="section-label">Economy &amp; Markets</h2>
-      {% set em = entries | selectattr("report_type", "equalto", "economy_markets") | list %}
-      {% if em %}
-        {# Step 13 #}
-      {% else %}
-      <div class="card px-4 py-6 text-center text-xs text-gray-400">
-        Economy &amp; Markets report - coming in Step 13.
+      <div class="col-body">
+        {% if ecm_entries %}
+          {% for entry in ecm_entries %}
+          <div class="rcard">
+            <h3 class="rcard-title">{{ entry.title }}</h3>
+            <p class="rcard-summary">{{ entry.summary }}</p>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">No ECM reports today.</div>
+        {% endif %}
       </div>
-      {% endif %}
-    </section>
+    </div>
 
-  </main>
+    {# ------------------------------------------------------------------ #}
+    {# DCM column #}
+    {# ------------------------------------------------------------------ #}
+    {% set dcm_entries = entries | selectattr("report_type", "equalto", "dcm") | list %}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">DCM</span>
+        {% if dcm_entries %}<span class="col-count">{{ dcm_entries | length }}</span>{% endif %}
+      </div>
+      <div class="col-body">
+        {% if dcm_entries %}
+          {% for entry in dcm_entries %}
+          <div class="rcard">
+            <h3 class="rcard-title">{{ entry.title }}</h3>
+            <p class="rcard-summary">{{ entry.summary }}</p>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">No DCM reports today.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------------ #}
+    {# Economy column #}
+    {# ------------------------------------------------------------------ #}
+    {% set econ_entries = entries | selectattr("report_type", "equalto", "economy_markets") | list %}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">Economy</span>
+        {% if econ_entries %}<span class="col-count">{{ econ_entries | length }}</span>{% endif %}
+      </div>
+      <div class="col-body">
+        {% if econ_entries %}
+          {% for entry in econ_entries %}
+          <div class="rcard">
+            <h3 class="rcard-title">{{ entry.title }}</h3>
+            <p class="rcard-summary">{{ entry.summary }}</p>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">Coming in Step 13.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------------ #}
+    {# Equities column #}
+    {# ------------------------------------------------------------------ #}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">Equities</span>
+      </div>
+      <div class="col-body">
+        <div class="col-empty">Coming in Step 13.</div>
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------------ #}
+    {# Commodities column #}
+    {# ------------------------------------------------------------------ #}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">Commodities</span>
+      </div>
+      <div class="col-body">
+        <div class="col-empty">Coming in Step 13.</div>
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------------ #}
+    {# Bonds column #}
+    {# ------------------------------------------------------------------ #}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">Bonds</span>
+      </div>
+      <div class="col-body">
+        <div class="col-empty">Coming in Step 13.</div>
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------------ #}
+    {# Currencies column #}
+    {# ------------------------------------------------------------------ #}
+    <div class="col">
+      <div class="col-header">
+        <span class="col-label">Currencies</span>
+      </div>
+      <div class="col-body">
+        <div class="col-empty">Coming in Step 13.</div>
+      </div>
+    </div>
+
+  </div><!-- /col-scroll -->
 
   <script src="/static/app.js"></script>
 </body>
