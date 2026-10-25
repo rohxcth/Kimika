@@ -22,6 +22,93 @@
   <!-- 8-column scroll layout -->
   <div class="col-scroll">
 
+  {# ------------------------------------------------------------------ #}
+  {# Macro: full expandable report card (shared by M&A, ECM, DCM)       #}
+  {# ------------------------------------------------------------------ #}
+  {% macro report_card(entry, report) %}
+  <div class="rcard" onclick="toggleCard('{{ entry.slug }}')">
+    <div class="rcard-top">
+      <span class="badge-region badge-region-{{ entry.region | lower }}">{{ entry.region }}</span>
+      {% if entry.deal_value_usd %}
+      <span class="rcard-value">{{ entry.deal_value_usd | format_usd }}</span>
+      {% endif %}
+    </div>
+    <h3 class="rcard-title">{{ entry.title }}</h3>
+    <p class="rcard-summary">{{ entry.summary }}</p>
+    <div class="rcard-chevron" id="arrow-{{ entry.slug }}"></div>
+
+    <div id="body-{{ entry.slug }}" class="hidden rcard-body" onclick="event.stopPropagation()">
+      {% if report %}
+      <div class="rcard-section">
+        <p class="rcard-section-label">Key takeaways</p>
+        <ul class="space-y-1.5">
+          {% for kt in report.key_takeaways %}
+          <li class="flex gap-2 text-xs text-gray-700 leading-snug">
+            <span class="text-[#0f2044] font-bold shrink-0">&middot;</span>
+            <span>{{ kt }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% for sec_key, sec_html in report.rendered_sections.items() %}
+      {% if sec_html is not list %}
+      <div class="rcard-section">
+        <p class="rcard-section-label">{{ sec_key | section_title }}</p>
+        <div class="prose-kimika">{{ sec_html | safe }}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+      {% if report.verification_log %}
+      <div class="rcard-section">
+        <button onclick="toggleVerification('{{ entry.slug }}')"
+                class="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2">
+          Verification ({{ report.verification_log | length }} figures)
+        </button>
+      </div>
+      <div id="verify-{{ entry.slug }}" class="hidden rcard-section bg-gray-50">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="text-left text-gray-400">
+              <th class="pb-1.5 pr-3 font-medium">Figure</th>
+              <th class="pb-1.5 pr-3 font-medium">Value</th>
+              <th class="pb-1.5 pr-3 font-medium">Status</th>
+              <th class="pb-1.5 font-medium">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in report.verification_log %}
+            <tr class="border-t border-gray-200">
+              <td class="py-1.5 pr-3 text-gray-700">{{ v.figure }}</td>
+              <td class="py-1.5 pr-3 text-gray-700 font-mono">{{ v.value }}</td>
+              <td class="py-1.5 pr-3">{{ v.status }}</td>
+              <td class="py-1.5 text-gray-400 italic">{{ v.note or "" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      {% if report.bibliography %}
+      <div class="rcard-section">
+        <p class="rcard-section-label">Bibliography</p>
+        <ul class="space-y-1">
+          {% for b in report.bibliography %}
+          <li class="text-xs text-gray-500">
+            <a href="{{ b.url }}" class="text-blue-600 hover:underline"
+               target="_blank" rel="noopener noreferrer">{{ b.title }}</a>
+            &mdash; {{ b.publisher }}, {{ b.date }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="rcard-section text-xs text-gray-400">Report data not available.</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endmacro %}
+
     {# ------------------------------------------------------------------ #}
     {# M&A column #}
     {# ------------------------------------------------------------------ #}
@@ -34,98 +121,7 @@
       <div class="col-body">
         {% if ma_entries %}
           {% for entry in ma_entries %}
-          {% set report = reports.get(entry.slug) %}
-          <div class="rcard" onclick="toggleCard('{{ entry.slug }}')">
-            <div class="rcard-top">
-              <span class="badge-region badge-region-{{ entry.region | lower }}">{{ entry.region }}</span>
-              {% if entry.deal_value_usd %}
-              <span class="rcard-value">{{ entry.deal_value_usd | format_usd }}</span>
-              {% endif %}
-            </div>
-            <h3 class="rcard-title">{{ entry.title }}</h3>
-            <p class="rcard-summary">{{ entry.summary }}</p>
-            <div class="rcard-chevron" id="arrow-{{ entry.slug }}"></div>
-
-            <!-- Expanded body -->
-            <div id="body-{{ entry.slug }}" class="hidden rcard-body" onclick="event.stopPropagation()">
-              {% if report %}
-              <!-- Key takeaways -->
-              <div class="rcard-section">
-                <p class="rcard-section-label">Key takeaways</p>
-                <ul class="space-y-1.5">
-                  {% for kt in report.key_takeaways %}
-                  <li class="flex gap-2 text-xs text-gray-700 leading-snug">
-                    <span class="text-[#0f2044] font-bold shrink-0">&middot;</span>
-                    <span>{{ kt }}</span>
-                  </li>
-                  {% endfor %}
-                </ul>
-              </div>
-
-              <!-- Sections -->
-              {% for sec_key, sec_html in report.rendered_sections.items() %}
-              {% if sec_html is not list %}
-              <div class="rcard-section">
-                <p class="rcard-section-label">{{ sec_key | section_title }}</p>
-                <div class="prose-kimika">{{ sec_html | safe }}</div>
-              </div>
-              {% endif %}
-              {% endfor %}
-
-              <!-- Verification toggle -->
-              {% if report.verification_log %}
-              <div class="rcard-section">
-                <button onclick="toggleVerification('{{ entry.slug }}')"
-                        class="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2">
-                  Verification ({{ report.verification_log | length }} figures)
-                </button>
-              </div>
-              <div id="verify-{{ entry.slug }}" class="hidden rcard-section bg-gray-50">
-                <table class="w-full text-xs border-collapse">
-                  <thead>
-                    <tr class="text-left text-gray-400">
-                      <th class="pb-1.5 pr-3 font-medium">Figure</th>
-                      <th class="pb-1.5 pr-3 font-medium">Value</th>
-                      <th class="pb-1.5 pr-3 font-medium">Status</th>
-                      <th class="pb-1.5 font-medium">Note</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for v in report.verification_log %}
-                    <tr class="border-t border-gray-200">
-                      <td class="py-1.5 pr-3 text-gray-700">{{ v.figure }}</td>
-                      <td class="py-1.5 pr-3 text-gray-700 font-mono">{{ v.value }}</td>
-                      <td class="py-1.5 pr-3">{{ v.status }}</td>
-                      <td class="py-1.5 text-gray-400 italic">{{ v.note or "" }}</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% endif %}
-
-              <!-- Bibliography -->
-              {% if report.bibliography %}
-              <div class="rcard-section">
-                <p class="rcard-section-label">Bibliography</p>
-                <ul class="space-y-1">
-                  {% for b in report.bibliography %}
-                  <li class="text-xs text-gray-500">
-                    <a href="{{ b.url }}" class="text-blue-600 hover:underline"
-                       target="_blank" rel="noopener noreferrer">{{ b.title }}</a>
-                    &mdash; {{ b.publisher }}, {{ b.date }}
-                  </li>
-                  {% endfor %}
-                </ul>
-              </div>
-              {% endif %}
-
-              {% else %}
-              <div class="rcard-section text-xs text-gray-400">Report data not available.</div>
-              {% endif %}
-            </div><!-- /body -->
-
-          </div><!-- /rcard -->
+          {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
           <div class="col-empty">No M&amp;A reports today.</div>
@@ -145,10 +141,7 @@
       <div class="col-body">
         {% if ecm_entries %}
           {% for entry in ecm_entries %}
-          <div class="rcard">
-            <h3 class="rcard-title">{{ entry.title }}</h3>
-            <p class="rcard-summary">{{ entry.summary }}</p>
-          </div>
+          {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
           <div class="col-empty">No ECM reports today.</div>
@@ -168,10 +161,7 @@
       <div class="col-body">
         {% if dcm_entries %}
           {% for entry in dcm_entries %}
-          <div class="rcard">
-            <h3 class="rcard-title">{{ entry.title }}</h3>
-            <p class="rcard-summary">{{ entry.summary }}</p>
-          </div>
+          {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
           <div class="col-empty">No DCM reports today.</div>

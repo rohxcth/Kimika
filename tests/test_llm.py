@@ -26,6 +26,8 @@ from app.llm import (
     classify_deals,
     quota_log,
     reset_quota_log,
+    write_ecm_report,
+    write_dcm_report,
     write_ma_report,
 )
 from app.report import ReportData
@@ -391,3 +393,107 @@ def test_build_report_slug_is_safe():
     report = _build_report_from_json(data, _raw_deal(), DATE_STR)
     import re
     assert re.match(r"^[a-z0-9\-]+$", report.slug)
+
+
+# ---------------------------------------------------------------------------
+# write_ecm_report
+# ---------------------------------------------------------------------------
+
+ECM_RESPONSE = json.dumps({
+    "title": "FinCo Ltd: A$75m placement at $2.10",
+    "key_takeaways": ["A$75m placement announced", "7.5% discount to last close", "Funds acquisition"],
+    "sections": {
+        "1_snapshot": "Snapshot here.",
+        "2_why_now": "Why now here.",
+        "3_process": "Process here.",
+        "4_pricing": "Pricing here.",
+        "5_underwriting_and_fees": "Fees here.",
+        "6_market_view": "Market view here.",
+        "7_outlook": "Outlook here.",
+        "8_bibliography": [
+            {"title": "ASX Announcement", "publisher": "ASX", "date": DATE_STR,
+             "url": "https://www.asx.com.au/...", "category": "Filings & announcements"}
+        ],
+    },
+    "metadata": {"issuer": "FinCo Ltd", "raise_type": "placement", "deal_value_usd": 49, "region": "AU"},
+    "verification_log": [],
+})
+
+
+def test_write_ecm_report_success(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(ECM_RESPONSE)
+    llm_mod._set_client(mock_client)
+
+    deal = _raw_deal()
+    report = write_ecm_report(deal, "Primary doc", "Secondary sources", DATE_STR)
+
+    assert isinstance(report, ReportData)
+    assert report.report_type == "ecm"
+    assert "FinCo" in report.title
+    assert len(report.key_takeaways) == 3
+    assert "8_bibliography" not in report.sections
+    assert len(report.bibliography) == 1
+
+
+def test_write_ecm_report_falls_back_to_stub_on_failure(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = Exception("error")
+    llm_mod._set_client(mock_client)
+
+    report = write_ecm_report(_raw_deal(), "doc", "sources", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "ecm"
+
+
+# ---------------------------------------------------------------------------
+# write_dcm_report
+# ---------------------------------------------------------------------------
+
+DCM_RESPONSE = json.dumps({
+    "title": "BigBank Group: A$500m Tier 2 notes at 3M BBSW +185bps",
+    "key_takeaways": ["A$500m Tier 2 priced", "+185bps, 15bps inside IPTs", "3x+ covered book"],
+    "sections": {
+        "1_snapshot": "Snapshot here.",
+        "2_credit_story": "Credit story here.",
+        "3_process": "Process here.",
+        "4_pricing": "Pricing here.",
+        "5_use_of_proceeds": "Use of proceeds here.",
+        "6_market_view": "Market view here.",
+        "7_outlook": "Outlook here.",
+        "8_bibliography": [
+            {"title": "ASX Announcement", "publisher": "ASX", "date": DATE_STR,
+             "url": "https://www.asx.com.au/...", "category": "Filings & announcements"}
+        ],
+    },
+    "metadata": {"issuer": "BigBank Group", "instrument": "subordinated_notes", "deal_value_usd": 325, "region": "AU"},
+    "verification_log": [],
+})
+
+
+def test_write_dcm_report_success(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(DCM_RESPONSE)
+    llm_mod._set_client(mock_client)
+
+    deal = _raw_deal()
+    report = write_dcm_report(deal, "Primary doc", "Secondary sources", DATE_STR)
+
+    assert isinstance(report, ReportData)
+    assert report.report_type == "dcm"
+    assert "BigBank" in report.title
+    assert len(report.key_takeaways) == 3
+    assert "8_bibliography" not in report.sections
+    assert len(report.bibliography) == 1
+
+
+def test_write_dcm_report_falls_back_to_stub_on_failure(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = Exception("error")
+    llm_mod._set_client(mock_client)
+
+    report = write_dcm_report(_raw_deal(), "doc", "sources", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "dcm"

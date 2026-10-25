@@ -52,14 +52,23 @@ def run(date_str: str | None = None) -> dict:
     raw_deals = discover_all(target_date)
     logger.info("Discovered %d raw candidates", len(raw_deals))
 
-    # 2. Classify (batch LLM call)
+    # 2. Classify (batch LLM call) → bucket by deal type
     classifications = llm.classify_deals(raw_deals)
-    ma_deals = _filter_ma(raw_deals, classifications)
-    logger.info("%d candidates classified as M&A", len(ma_deals))
+    buckets = _bucket_deals(raw_deals, classifications)
+    logger.info(
+        "Classified: M&A=%d ECM=%d DCM=%d Other=%d",
+        len(buckets["M&A"]), len(buckets["ECM"]),
+        len(buckets["DCM"]), len(buckets["Other"]),
+    )
 
-    # 3. Pick: rank by deal value; top N get full reports
-    ranked = _rank_deals(ma_deals)
-    full_deals = ranked[:_MAX_FULL]
+    # 3. Pick: rank each bucket by deal value; combined top N get full reports
+    all_deals = (
+        _rank_deals(buckets["M&A"])
+        + _rank_deals(buckets["ECM"])
+        + _rank_deals(buckets["DCM"])
+        + _rank_deals(buckets["Other"])
+    )
+    full_deals = all_deals[:_MAX_FULL]
 
     # 4 + 5 + 6. Research → Write → Verify for each deal
     saved_reports: list[ReportData] = []
@@ -85,18 +94,21 @@ def run(date_str: str | None = None) -> dict:
 # Stage implementations
 # ---------------------------------------------------------------------------
 
-def _filter_ma(
+def _bucket_deals(
     raw_deals: list[RawDeal],
     classifications: list[dict],
-) -> list[RawDeal]:
-    """Return only deals classified as M&A (excluding not_a_deal)."""
+) -> dict[str, list[RawDeal]]:
+    """Group deals by type: M&A, ECM, DCM, Other. Drops not_a_deal."""
+    buckets: dict[str, list[RawDeal]] = {"M&A": [], "ECM": [], "DCM": [], "Other": []}
     cls_by_index = {c["index"]: c for c in classifications}
-    result = []
     for i, deal in enumerate(raw_deals):
-        cls = cls_by_index.get(i, {})
-        if cls.get("deal_type") == "M&A":
-            result.append(deal)
-    return result
+        deal_type = cls_by_index.get(i, {}).get("deal_type", "not_a_deal")
+        if deal_type in buckets:
+            # Attach classified deal_type so the writer can route correctly
+            deal = dict(deal)
+            deal["deal_type"] = deal_type
+            buckets[deal_type].append(deal)
+    return buckets
 
 
 def _rank_deals(deals: list[RawDeal]) -> list[RawDeal]:
@@ -137,8 +149,16 @@ def _research_write_verify(deal: RawDeal, date_str: str) -> ReportData | None:
 
     secondary_sources = ""  # Step 6 stub; Step 7 adds secondary fetching
 
+    deal_type = deal.get("deal_type", "M&A")
+    writer = {
+        "M&A":   llm.write_ma_report,
+        "ECM":   llm.write_ecm_report,
+        "DCM":   llm.write_dcm_report,
+        "Other": llm.write_ma_report,   # closest template for now
+    }.get(deal_type, llm.write_ma_report)
+
     try:
-        report = llm.write_ma_report(deal, primary_doc, secondary_sources, date_str)
+        report = writer(deal, primary_doc, secondary_sources, date_str)
     except Exception as exc:
         logger.error("LLM write failed for %s: %s", deal.get("title"), exc)
         return None

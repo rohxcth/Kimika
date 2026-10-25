@@ -38,6 +38,7 @@ from pathlib import Path
 
 from app.config import cfg
 from app.prompts.ma_report import CLASSIFY_BATCH, MA_FULL_REPORT, SYSTEM
+from app.prompts.ecm_dcm_report import ECM_FULL_REPORT, DCM_FULL_REPORT
 from app.report import ReportData, make_slug
 
 logger = logging.getLogger(__name__)
@@ -288,6 +289,64 @@ def _stub_ma_report(deal: dict, date_str: str) -> ReportData:
     )
 
 
+def _stub_ecm_report(deal: dict, date_str: str) -> ReportData:
+    company = deal.get("company", "Unknown")
+    region = deal.get("region", "US")
+    title = f"{company} — ECM transaction"
+    return ReportData(
+        slug=make_slug(title, region, "ecm", date_str),
+        date=date_str,
+        report_type="ecm",
+        region=region,
+        title=title,
+        key_takeaways=["Stub report — Gemini unavailable or quota exceeded."],
+        sections={
+            "1_snapshot": "Not yet populated.",
+            "2_why_now": "Not yet populated.",
+            "3_process": "Not publicly disclosed.",
+            "4_pricing": "Not yet populated.",
+            "5_underwriting_and_fees": "Not publicly disclosed.",
+            "6_market_view": "Not yet populated.",
+            "7_outlook": "Not yet populated.",
+        },
+        bibliography=[],
+        metadata={
+            "issuer": company, "raise_type": "Unknown",
+            "deal_value_usd": None, "region": region, "status": "announced",
+        },
+        verification_log=[],
+    )
+
+
+def _stub_dcm_report(deal: dict, date_str: str) -> ReportData:
+    company = deal.get("company", "Unknown")
+    region = deal.get("region", "US")
+    title = f"{company} — DCM transaction"
+    return ReportData(
+        slug=make_slug(title, region, "dcm", date_str),
+        date=date_str,
+        report_type="dcm",
+        region=region,
+        title=title,
+        key_takeaways=["Stub report — Gemini unavailable or quota exceeded."],
+        sections={
+            "1_snapshot": "Not yet populated.",
+            "2_credit_story": "Not yet populated.",
+            "3_process": "Not publicly disclosed.",
+            "4_pricing": "Not yet populated.",
+            "5_use_of_proceeds": "Not yet populated.",
+            "6_market_view": "Not yet populated.",
+            "7_outlook": "Not yet populated.",
+        },
+        bibliography=[],
+        metadata={
+            "issuer": company, "instrument": "Unknown",
+            "deal_value_usd": None, "region": region, "status": "announced",
+        },
+        verification_log=[],
+    )
+
+
 
 # ---------------------------------------------------------------------------
 # Public interface
@@ -346,19 +405,82 @@ def write_ma_report(
     return _stub_ma_report(deal, date_str)
 
 
+def write_ecm_report(
+    deal: dict,
+    primary_doc: str,
+    secondary_sources: str,
+    date_str: str,
+) -> ReportData:
+    """Write a full ECM report. Uses Flash (one request per report).
+
+    Returns a ReportData. Falls back to stub if Gemini is unavailable.
+    """
+    prompt = ECM_FULL_REPORT.format(
+        primary_doc=primary_doc or "Primary document not available.",
+        secondary_sources=secondary_sources or "No secondary sources available.",
+        date=date_str,
+    )
+    text = _call(_FLASH, "flash", prompt)
+
+    if text:
+        parsed = _extract_json(text)
+        if isinstance(parsed, dict):
+            return _build_report_from_json(parsed, deal, date_str, report_type="ecm",
+                                           bib_key="8_bibliography")
+
+    logger.warning("write_ecm_report fell back to stub for: %s", deal.get("title"))
+    return _stub_ecm_report(deal, date_str)
+
+
+def write_dcm_report(
+    deal: dict,
+    primary_doc: str,
+    secondary_sources: str,
+    date_str: str,
+) -> ReportData:
+    """Write a full DCM report. Uses Flash (one request per report).
+
+    Returns a ReportData. Falls back to stub if Gemini is unavailable.
+    """
+    prompt = DCM_FULL_REPORT.format(
+        primary_doc=primary_doc or "Primary document not available.",
+        secondary_sources=secondary_sources or "No secondary sources available.",
+        date=date_str,
+    )
+    text = _call(_FLASH, "flash", prompt)
+
+    if text:
+        parsed = _extract_json(text)
+        if isinstance(parsed, dict):
+            return _build_report_from_json(parsed, deal, date_str, report_type="dcm",
+                                           bib_key="8_bibliography")
+
+    logger.warning("write_dcm_report fell back to stub for: %s", deal.get("title"))
+    return _stub_dcm_report(deal, date_str)
+
 
 # ---------------------------------------------------------------------------
 # Build ReportData from Gemini JSON response
 # ---------------------------------------------------------------------------
 
-def _build_report_from_json(data: dict, deal: dict, date_str: str) -> ReportData:
-    """Construct a ReportData from the JSON dict Gemini returns."""
+def _build_report_from_json(
+    data: dict,
+    deal: dict,
+    date_str: str,
+    report_type: str = "ma_full",
+    bib_key: str = "9_bibliography",
+) -> ReportData:
+    """Construct a ReportData from the JSON dict Gemini returns.
+
+    report_type: "ma_full" | "ecm" | "dcm"
+    bib_key: key under sections where bibliography was placed by the prompt
+    """
     region = deal.get("region", data.get("metadata", {}).get("region", "US"))
-    title = data.get("title", deal.get("title", "M&A report"))
+    title = data.get("title", deal.get("title", f"{report_type.upper()} report"))
     sections = data.get("sections", {})
 
     # Bibliography lives inside sections in the prompt schema — pull it out
-    bibliography = sections.pop("9_bibliography", []) or data.get("bibliography", [])
+    bibliography = sections.pop(bib_key, []) or data.get("bibliography", [])
     if not isinstance(bibliography, list):
         bibliography = []
 
@@ -366,9 +488,9 @@ def _build_report_from_json(data: dict, deal: dict, date_str: str) -> ReportData
     metadata.setdefault("region", region)
 
     return ReportData(
-        slug=make_slug(title, region, "ma_full", date_str),
+        slug=make_slug(title, region, report_type, date_str),
         date=date_str,
-        report_type="ma_full",
+        report_type=report_type,
         region=region,
         title=title,
         key_takeaways=data.get("key_takeaways", [])[:3],

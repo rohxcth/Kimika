@@ -117,9 +117,9 @@ def test_api_index_ma_first(client):
     assert entries[0]["report_type"] == "ma_full"
 
 
-def test_api_index_has_three_sample_reports(client):
+def test_api_index_has_five_sample_reports(client):
     r = client.get(f"/api/index/{SAMPLE_DATE}")
-    assert len(r.json()) == 3
+    assert len(r.json()) == 5
 
 
 def test_api_index_contains_uk_report(client):

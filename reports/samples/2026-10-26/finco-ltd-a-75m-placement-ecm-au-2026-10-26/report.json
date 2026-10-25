@@ -1,0 +1,54 @@
+{
+  "slug": "finco-ltd-a-75m-placement-ecm-au-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "ecm",
+  "region": "AU",
+  "title": "FinCo Ltd: A$75m placement at $2.10",
+  "key_takeaways": [
+    "FinCo Ltd (ASX: FNC) raises A$75m via a fully underwritten institutional placement at $2.10 per share, a 7.5% discount to the last close of $2.27 on 24 Oct 2026.",
+    "Proceeds fund the acquisition of Regional Finance Partners Pty Ltd, announced simultaneously; the placement is contingent on ACCC clearance.",
+    "Bell Potter and Morgans acting as joint lead managers; SPP of up to $30,000 per holder at the same price to follow."
+  ],
+  "sections": {
+    "1_snapshot": "| | |\n|---|---|\n| **Issuer** | FinCo Ltd (ASX: FNC) |\n| **Instrument** | Ordinary shares |\n| **Raise type** | Institutional placement + SPP |\n| **Size** | A$75m (placement) + up to A$10m (SPP) |\n| **Offer price** | A$2.10 per share |\n| **Discount to last close** | 7.5% to A$2.27 (24 Oct 2026) |\n| **Discount to 10-day VWAP** | 6.8% to A$2.25 |\n| **New shares** | 35.7m shares |\n| **Dilution** | 8.9% of pre-placement shares on issue |\n| **Underwritten** | Fully underwritten |\n| **Lead managers** | Bell Potter Securities, Morgans Financial |\n| **Settlement** | 29 Oct 2026 (T+3) |",
+    "2_why_now": "FinCo is simultaneously acquiring Regional Finance Partners Pty Ltd for A$68m cash, funded primarily from this placement. Management cited the acquisition as immediately EPS-accretive on an FY27 basis and noted the current market window as favourable given recent sector re-rating. The balance sheet had A$12m cash pre-raise, insufficient to fund the acquisition independently.",
+    "3_process": "- **25 Oct 2026** FinCo entered a trading halt pending capital raising announcement.\n- **25-26 Oct 2026** Bell Potter and Morgans wall-crossed institutional investors; bookbuild run overnight.\n- **26 Oct 2026** Bookbuild closed, priced at A$2.10; trading halt lifted at open; ASX announcement released.\n- **29 Oct 2026** Expected settlement date.\n- SPP to follow with a target close date in late November 2026.",
+    "4_pricing": "The 7.5% discount to last close is within the typical range for a fully underwritten placement of this size (5-10% for deals under A$100m on ASX). The 10-day VWAP discount of 6.8% is tighter, reflecting strong institutional demand. The bookbuild was reported as covered at the price. No cornerstone investor disclosed.",
+    "5_underwriting_and_fees": "The placement is fully underwritten by Bell Potter Securities and Morgans Financial as joint underwriters. Underwriting fee not publicly disclosed; typical market range for placements of this size is 2-3% of proceeds.",
+    "6_market_view": "FNC shares opened at A$2.13 post-halt, 1.4% above the placement price, suggesting the acquisition rationale was well-received. The modest premium to offer price indicates the discount was appropriate rather than generous. Early broker commentary characterised the acquisition as strategically logical given FinCo's stated regional expansion objective.",
+    "7_outlook": "Settlement 29 Oct 2026; SPP opens approximately 4 Nov 2026, closes late November. ACCC clearance for the underlying acquisition expected within standard 30-day Phase 1 period. No further capital raises flagged. FY27 EPS accretion will depend on integration execution and ACCC outcome."
+  },
+  "verification_log": [
+    {
+      "figure": "Last close (24 Oct 2026)",
+      "value": "A$2.27",
+      "status": "\u2753 Single source",
+      "sources": ["ASX announcement"],
+      "note": "Not yet cross-verified against FMP/yfinance (sample data)."
+    },
+    {
+      "figure": "Discount to last close (7.5%)",
+      "value": "7.5%",
+      "status": "\ud83d\udd01 Recomputed",
+      "sources": ["ASX announcement"],
+      "note": "(2.27 - 2.10) / 2.27 = 7.49%. Rounded to 7.5%."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "FinCo Ltd: Institutional Placement and SPP — Investor Presentation",
+      "publisher": "ASX",
+      "date": "2026-10-26",
+      "url": "https://www.asx.com.au/asx/1/file/2026/FNC_Placement.pdf",
+      "category": "Filings & announcements"
+    }
+  ],
+  "metadata": {
+    "issuer": "FinCo Ltd",
+    "raise_type": "placement",
+    "deal_value_usd": 49,
+    "region": "AU",
+    "status": "priced"
+  },
+  "updated_at": "2026-10-26T07:50:00Z"
+}

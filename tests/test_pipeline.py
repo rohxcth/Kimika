@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.pipeline import (
-    _filter_ma,
+    _bucket_deals,
     _rank_deals,
     run,
 )
@@ -166,34 +166,47 @@ def test_index_ordering_three_deals(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# _filter_ma
+# _bucket_deals
 # ---------------------------------------------------------------------------
 
-def test_filter_ma_keeps_ma_deals():
-    deals = [_raw_deal(), _raw_deal(), _raw_deal()]
+def test_bucket_deals_routes_by_type():
+    deals = [_raw_deal(), _raw_deal(), _raw_deal(), _raw_deal()]
     classifications = [
         {"index": 0, "deal_type": "M&A"},
-        {"index": 1, "deal_type": "ECM"},   # filtered out
-        {"index": 2, "deal_type": "M&A"},
+        {"index": 1, "deal_type": "ECM"},
+        {"index": 2, "deal_type": "DCM"},
+        {"index": 3, "deal_type": "Other"},
     ]
-    result = _filter_ma(deals, classifications)
-    assert len(result) == 2
+    buckets = _bucket_deals(deals, classifications)
+    assert len(buckets["M&A"]) == 1
+    assert len(buckets["ECM"]) == 1
+    assert len(buckets["DCM"]) == 1
+    assert len(buckets["Other"]) == 1
 
 
-def test_filter_ma_excludes_not_a_deal():
+def test_bucket_deals_drops_not_a_deal():
     deals = [_raw_deal(), _raw_deal()]
     classifications = [
         {"index": 0, "deal_type": "not_a_deal"},
         {"index": 1, "deal_type": "M&A"},
     ]
-    result = _filter_ma(deals, classifications)
-    assert len(result) == 1
+    buckets = _bucket_deals(deals, classifications)
+    assert len(buckets["M&A"]) == 1
+    assert sum(len(v) for v in buckets.values()) == 1
 
 
-def test_filter_ma_all_filtered():
+def test_bucket_deals_attaches_deal_type():
     deals = [_raw_deal()]
     classifications = [{"index": 0, "deal_type": "ECM"}]
-    assert _filter_ma(deals, classifications) == []
+    buckets = _bucket_deals(deals, classifications)
+    assert buckets["ECM"][0]["deal_type"] == "ECM"
+
+
+def test_bucket_deals_all_not_a_deal():
+    deals = [_raw_deal()]
+    classifications = [{"index": 0, "deal_type": "not_a_deal"}]
+    buckets = _bucket_deals(deals, classifications)
+    assert all(len(v) == 0 for v in buckets.values())
 
 
 # ---------------------------------------------------------------------------

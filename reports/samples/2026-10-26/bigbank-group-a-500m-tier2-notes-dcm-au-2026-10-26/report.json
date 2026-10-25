@@ -1,0 +1,61 @@
+{
+  "slug": "bigbank-group-a-500m-tier2-notes-dcm-au-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "dcm",
+  "region": "AU",
+  "title": "BigBank Group: A$500m Tier 2 notes at 3M BBSW +185bps",
+  "key_takeaways": [
+    "BigBank Group (ASX: BBG) prices A$500m of 10-year non-call 5-year Tier 2 subordinated notes at 3M BBSW +185bps, 15bps inside initial price thoughts of +200bps area.",
+    "Book covered more than 3x at pricing, with 62 investors; approximately 75% allocated to Australian accounts and 25% to Asian accounts.",
+    "Proceeds refinance A$450m of Tier 2 notes maturing in March 2027, strengthening BigBank's capital position ahead of APRA's upcoming Basel III finalisation rules."
+  ],
+  "sections": {
+    "1_snapshot": "| | |\n|---|---|\n| **Issuer** | BigBank Group Ltd (ASX: BBG) |\n| **Instrument** | Tier 2 subordinated notes |\n| **Size** | A$500m |\n| **Currency** | AUD |\n| **Tenor** | 10-year non-call 5-year (10NC5) |\n| **Coupon** | Floating: 3M BBSW + 185bps, quarterly |\n| **Benchmark** | 3-month BBSW |\n| **Rating** | BBB+ (S&P) / Baa1 (Moody's) — instrument level |\n| **Arrangers** | ANZ, CBA, NAB, Westpac (joint lead managers) |\n| **Pricing date** | 26 Oct 2026 |\n| **Settlement** | 2 Nov 2026 |\n| **Status** | Priced |",
+    "2_credit_story": "BigBank Group is rated A- / A3 at the senior level (S&P / Moody's), consistent with a major Australian bank. The Tier 2 notes are rated two notches below the senior rating per standard methodology. S&P affirmed the rating with a stable outlook in September 2026, citing strong asset quality and capital adequacy above APRA minimums. BigBank's CET1 ratio was 12.4% as of the June 2026 half, well above the 10.25% regulatory minimum.",
+    "3_process": "- **24 Oct 2026** BigBank mandated ANZ, CBA, NAB and Westpac as joint lead managers.\n- **25 Oct 2026** Investor roadshow calls; IPTs released at 3M BBSW +200bps area.\n- **26 Oct 2026** Books opened at 9:00am AEDT; guidance set at +190bps; priced at +185bps by 11:30am.\n- **2 Nov 2026** Expected settlement.\nMargin tightened 15bps from IPTs to pricing on strong book demand.",
+    "4_pricing": "The +185bps margin represents a modest new issue concession of approximately 5-8bps versus BigBank's existing Tier 2 curve (the March 2027 notes were trading at approximately +177bps on a like-for-like basis before announcement). The tightening from IPTs (+200bps) to pricing (+185bps) reflects robust demand. Comparable recent Tier 2 issuance from major Australian banks has priced in the +180-+195bps range.",
+    "5_use_of_proceeds": "Proceeds will primarily refinance the A$450m Tier 2 notes maturing in March 2027, with the A$50m surplus adding to general capital resources. The pre-financing of the March 2027 maturity removes near-term refinancing risk and locks in current spread levels ahead of anticipated APRA Basel III capital reforms.",
+    "6_market_view": "Secondary trading opened around +183bps (2bps through pricing), consistent with a well-received deal. The 3x+ oversubscription and 62-investor book indicate strong institutional demand. The four-bank syndicate structure is standard for major bank Tier 2 issuance; a wider syndicate was not warranted given domestic demand absorption.",
+    "7_outlook": "Post-settlement, BigBank's Tier 2 capital stack is fully refinanced until at least 2031. No further Tier 2 issuance is expected in the near term. The next capital market event is the February 2027 senior benchmark update. Management has flagged potential Additional Tier 1 (AT1) issuance in H1 2027 to replace legacy hybrid securities as APRA's AT1 reform framework is finalised."
+  },
+  "verification_log": [
+    {
+      "figure": "Margin tightening (15bps from IPTs)",
+      "value": "200bps \u2192 185bps",
+      "status": "\u2753 Single source",
+      "sources": ["ASX announcement / prospectus supplement"],
+      "note": "Not yet cross-verified against independent market data (sample data)."
+    },
+    {
+      "figure": "Book coverage (3x+)",
+      "value": ">3x",
+      "status": "\u2753 Single source",
+      "sources": ["ASX announcement"],
+      "note": "Investor count (62) cross-checks directionally but exact coverage not independently confirmed."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "BigBank Group: Tier 2 Subordinated Notes Pricing Announcement",
+      "publisher": "ASX",
+      "date": "2026-10-26",
+      "url": "https://www.asx.com.au/asx/1/file/2026/BBG_Tier2_Pricing.pdf",
+      "category": "Filings & announcements"
+    },
+    {
+      "title": "BigBank Group Credit Rating Affirmation",
+      "publisher": "S&P Global Ratings",
+      "date": "2026-09-15",
+      "url": "https://www.spglobal.com/ratings/en/research/articles/BBG-affirm-2026",
+      "category": "Commentary & news"
+    }
+  ],
+  "metadata": {
+    "issuer": "BigBank Group",
+    "instrument": "subordinated_notes",
+    "deal_value_usd": 325,
+    "region": "AU",
+    "status": "priced"
+  },
+  "updated_at": "2026-10-26T08:15:00Z"
+}
