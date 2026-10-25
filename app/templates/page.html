@@ -73,10 +73,11 @@
               <div class="flex items-center gap-2 shrink-0 ml-3">
                 {% if entry.has_pdf %}
                 <a href="/reports/{{ entry.date }}/{{ entry.slug }}/report.pdf"
-                   class="btn-pdf"
-                   onclick="event.stopPropagation()">PDF</a>
+                   class="btn-pdf" onclick="event.stopPropagation()">PDF</a>
                 {% else %}
-                <span class="btn-pdf-disabled" title="PDF available in Step 9">PDF</span>
+                <a href="/api/render/{{ entry.date }}/{{ entry.slug }}"
+                   class="btn-pdf" target="_blank"
+                   onclick="event.stopPropagation()">PDF</a>
                 {% endif %}
                 <span id="arrow-{{ entry.slug }}" class="text-gray-300 text-xs transition-transform">&#9654;</span>
               </div>
