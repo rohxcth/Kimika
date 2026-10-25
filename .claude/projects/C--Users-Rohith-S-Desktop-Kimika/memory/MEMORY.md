@@ -1,8 +1,8 @@
 # Kimika — Claude Code memory
 
 ## Project state
-- **Last completed step:** Step 4 (crosscheck.py + tests, 158 passing)
-- **Next step:** Step 5 — Discover M&A: SEC EDGAR + ASX + UK RNS (big step — show plan first)
+- **Last completed step:** Step 5 (sources.py + tests, 198 passing)
+- **Next step:** Step 6 — Pick → Research → Write → Verify → Save (big step — show plan first)
 
 ## Key facts
 - Python 3.14 (C:\Program Files\Python314\python.exe); use `python -m pytest -q`
