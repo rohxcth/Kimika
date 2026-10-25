@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import re as _re
+from contextlib import asynccontextmanager
 from datetime import date, datetime
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.config import cfg
 from app.report import ReportData, load_index, load_report
+from app.scheduler import start_scheduler, stop_scheduler
 
 try:
     from dotenv import load_dotenv
@@ -28,7 +30,15 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Kimika")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler()
+
+
+app = FastAPI(title="Kimika", lifespan=lifespan)
 
 _BASE_DIR = Path(__file__).parent
 _TEMPLATES_DIR = _BASE_DIR / "templates"
