@@ -282,25 +282,68 @@ def test_rank_deals_single_deal():
 # LLM stub
 # ---------------------------------------------------------------------------
 
-def test_llm_classify_returns_list():
+def test_llm_classify_returns_list(tmp_path):
+    import json as _json
+    from unittest.mock import MagicMock
+    mock_resp = MagicMock()
+    mock_resp.text = _json.dumps([
+        {"index": 0, "deal_type": "M&A", "region": "AU", "confidence": "high", "reason": "test"},
+        {"index": 1, "deal_type": "M&A", "region": "AU", "confidence": "high", "reason": "test"},
+    ])
+    mock_client = MagicMock()
+    mock_client.models.generate_content.return_value = mock_resp
+    _llm._set_client(mock_client)
+    _llm._LLM_CACHE_DIR = tmp_path / "cache"
+
     deals = [_raw_deal(), _raw_deal()]
     result = _llm.classify_deals(deals)
     assert len(result) == 2
     assert all("deal_type" in r for r in result)
+    _llm._set_client(None)
+    _llm.reset_quota_log()
 
 
-def test_llm_write_ma_report_returns_report_data():
+def test_llm_write_ma_report_returns_report_data(tmp_path):
+    import json as _json
+    from unittest.mock import MagicMock
+    mock_resp = MagicMock()
+    mock_resp.text = _json.dumps({
+        "title": "Acme Corp — M&A", "key_takeaways": ["t1", "t2", "t3"],
+        "sections": {"1_deal_snapshot": "snap"}, "metadata": {"region": "AU"},
+        "verification_log": [],
+    })
+    mock_client = MagicMock()
+    mock_client.models.generate_content.return_value = mock_resp
+    _llm._set_client(mock_client)
+    _llm._LLM_CACHE_DIR = tmp_path / "cache"
+
     report = _llm.write_ma_report(_raw_deal(), "doc text", "sources", DATE_STR)
     assert isinstance(report, ReportData)
     assert report.date == DATE_STR
     assert report.report_type == "ma_full"
+    _llm._set_client(None)
+    _llm.reset_quota_log()
 
 
-def test_llm_write_deal_wrap_returns_list():
+def test_llm_write_deal_wrap_returns_list(tmp_path):
+    import json as _json
+    from unittest.mock import MagicMock
+    mock_resp = MagicMock()
+    mock_resp.text = _json.dumps([
+        {"region": "AU", "deal_type": "M&A", "parties": "Acme Corp",
+         "size": "A$2bn", "key_term": "cash", "status": "Announced"}
+    ])
+    mock_client = MagicMock()
+    mock_client.models.generate_content.return_value = mock_resp
+    _llm._set_client(mock_client)
+    _llm._LLM_CACHE_DIR = tmp_path / "cache"
+
     entries = _llm.write_deal_wrap([_raw_deal()], DATE_STR)
     assert isinstance(entries, list)
     assert len(entries) == 1
     assert "region" in entries[0]
+    _llm._set_client(None)
+    _llm.reset_quota_log()
 
 
 def test_llm_quota_log():
