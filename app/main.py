@@ -12,8 +12,8 @@ from datetime import date, datetime
 from pathlib import Path
 
 import markdown as md_lib
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -104,35 +104,6 @@ async def api_report(date_str: str, slug: str):
         raise HTTPException(404, "Report not found")
     return JSONResponse(report.to_dict())
 
-
-@app.get("/api/render/{date_str}/{slug}")
-async def api_render(date_str: str, slug: str, background_tasks: BackgroundTasks):
-    """Generate a PDF for a report and return it. Renders synchronously."""
-    from app.pdf import render_report
-    report = _load_report(date_str, slug)
-    if report is None:
-        raise HTTPException(404, "Report not found")
-    # Determine output dir: real reports dir (not samples)
-    output_dir = _REPORTS_ROOT / date_str / slug
-    try:
-        path = render_report(report, output_dir=output_dir)
-    except Exception as exc:
-        logger.error("PDF render failed for %s/%s: %s", date_str, slug, exc)
-        raise HTTPException(500, f"PDF render failed: {exc}")
-    return FileResponse(str(path), media_type="application/pdf",
-                        filename=f"Kimika_{slug}.pdf")
-
-
-@app.get("/reports/{date_str}/{slug}/report.pdf")
-async def serve_pdf(date_str: str, slug: str):
-    """Serve a pre-rendered PDF, or 404 if not yet generated."""
-    # Check real reports first, then samples
-    for base in [_REPORTS_ROOT / date_str, _REPORTS_ROOT / "samples" / date_str]:
-        path = base / slug / "report.pdf"
-        if path.exists():
-            return FileResponse(str(path), media_type="application/pdf",
-                                filename=f"Kimika_{slug}.pdf")
-    raise HTTPException(404, "PDF not yet generated — use /api/render/{date}/{slug}")
 
 
 @app.get("/health")
