@@ -211,216 +211,298 @@
 
 /* ── Report detail page ── */
 
-.report-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
+/* hidden utility (used by JS toggleVerification) */
+.hidden { display: none !important; }
+
+/* Page shell */
+.rp-page {
+  background: #f5f5f3;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.report-meta-row {
+/* Header */
+.rp-header {
+  background: #0f2044;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.rp-back {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: color 0.1s;
+}
+.rp-back:hover { color: white; }
+
+.rp-wordmark {
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+}
+
+/* Document */
+.rp-main {
+  max-width: 760px;
+  margin: 0 auto;
+  background: white;
+  padding: 2.5rem 3rem 4rem;
+  min-height: calc(100vh - 44px);
+  box-shadow: 0 0 0 1px #e5e7eb;
+}
+
+@media (max-width: 860px) {
+  .rp-main { padding: 1.75rem 1.25rem 3rem; }
+}
+
+/* Metadata row */
+.rp-meta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
 }
 
-.report-type-label {
+.rp-type {
   font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #9ca3af;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7a99;
 }
 
-.report-meta-date {
+.rp-date {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6b7a99;
   margin-left: auto;
 }
 
-.report-title {
-  font-size: 1.75rem;
+/* Title */
+.rp-title {
+  font-size: 1.625rem;
   font-weight: 700;
   color: #0f2044;
   line-height: 1.25;
-  margin-bottom: 1.5rem;
+  margin: 0 0 1.75rem;
+  max-width: 56ch;
 }
 
-.report-takeaways {
-  background: #f0f4ff;
-  border-left: 3px solid #0f2044;
-  border-radius: 0 0.375rem 0.375rem 0;
-  padding: 1rem 1.25rem;
-  margin-bottom: 2rem;
+/* Key takeaways — numbered ruled table */
+.rp-kt {
+  border-top: 1.5px solid #0f2044;
+  margin-bottom: 2.25rem;
 }
 
-.report-takeaways-label {
+.rp-kt-row {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e8ecf4;
+  align-items: baseline;
+}
+
+.rp-kt-n {
   font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   color: #0f2044;
-  margin-bottom: 0.625rem;
+  letter-spacing: 0.05em;
+  padding-top: 0.15rem;
 }
 
-.report-takeaways-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.report-takeaways-list li {
+.rp-kt-text {
   font-size: 0.875rem;
-  color: #1e3a6e;
-  line-height: 1.5;
-  padding-left: 1rem;
-  position: relative;
+  font-weight: 500;
+  color: #1a3461;
+  line-height: 1.55;
+  margin: 0;
 }
 
-.report-takeaways-list li::before {
-  content: "·";
-  position: absolute;
-  left: 0;
-  font-weight: 700;
-  color: #0f2044;
+/* Body section wrapper */
+.rp-section {
+  padding-bottom: 0.25rem;
 }
 
-.report-section {
-  margin-bottom: 0.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.report-section:last-of-type {
-  border-bottom: none;
-}
-
-/* Override prose sizes for the detail page — larger and more readable */
-.report-page .prose-kimika {
+/* Body prose */
+.prose-report {
   font-size: 0.875rem;
   line-height: 1.7;
+  color: #1f2937;
 }
 
-.report-page .prose-kimika h2 {
-  font-size: 1rem;
+.prose-report p { margin: 0 0 0.875rem; }
+
+.prose-report ul,
+.prose-report ol { margin: 0 0 0.875rem 1.25rem; }
+
+.prose-report li { margin-bottom: 0.25rem; }
+
+/* Section headings — research note chapter markers */
+.prose-report h2 {
+  font-size: 0.6875rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: #0f2044;
-  margin: 1.5rem 0 0.5rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1.5px solid #0f2044;
+  padding-bottom: 0.3rem;
+  margin: 2rem 0 0.875rem;
 }
 
-.report-page .prose-kimika h3 {
+.prose-report h3 {
   font-size: 0.875rem;
   font-weight: 600;
   color: #111827;
   margin: 1.25rem 0 0.375rem;
 }
 
-.report-page .prose-kimika p {
-  margin: 0 0 0.875rem;
+.prose-report strong {
+  font-weight: 600;
+  color: #111827;
 }
 
-.report-page .prose-kimika table {
+/* Tables */
+.prose-report table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.8125rem;
-  margin: 1rem 0;
+  margin: 0.75rem 0 1.25rem;
 }
 
-/* Verification section */
-.report-verify-wrap {
-  margin: 2rem 0 1rem;
-  border-top: 1px solid #e5e7eb;
+.prose-report th {
+  background: #f7f8fc;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7a99;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1.5px solid #e8ecf4;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.prose-report td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f0f2f7;
+  color: #1f2937;
+  vertical-align: top;
+}
+
+.prose-report tr:last-child td { border-bottom: none; }
+
+/* Verification disclosure */
+.rp-disclosure {
+  margin-top: 2.5rem;
   padding-top: 1rem;
+  border-top: 1px solid #e8ecf4;
 }
 
-.report-verify-toggle {
+.rp-disclosure-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   font-size: 0.75rem;
-  color: #6b7280;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: #6b7a99;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
 }
+.rp-disclosure-btn:hover { color: #374151; }
 
-.report-verify-toggle:hover { color: #374151; }
+.rp-disclosure-count {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #f0f2f7;
+  color: #6b7a99;
+  padding: 0.125rem 0.4rem;
+  border-radius: 999px;
+}
 
-.report-verify-body {
-  margin-top: 0.75rem;
+.rp-disclosure-body {
+  margin-top: 0.875rem;
   overflow-x: auto;
 }
 
-.report-verify-table {
+.rp-vtable {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
 }
 
-.report-verify-table th,
-.report-verify-table td {
-  border: 1px solid #e5e7eb;
-  padding: 0.375rem 0.625rem;
+.rp-vtable th,
+.rp-vtable td {
+  padding: 0.4rem 0.625rem;
   text-align: left;
   vertical-align: top;
+  border-bottom: 1px solid #f0f2f7;
 }
 
-.report-verify-table th {
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
+.rp-vtable th {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7a99;
+  background: #f7f8fc;
   white-space: nowrap;
+  border-bottom: 1.5px solid #e8ecf4;
 }
 
 /* Bibliography */
-.report-bibliography {
-  margin-top: 2rem;
+.rp-bib {
+  margin-top: 2.5rem;
   padding-top: 1.5rem;
-  border-top: 2px solid #e5e7eb;
+  border-top: 2px solid #e8ecf4;
 }
 
-.report-bibliography-label {
+.rp-bib-heading {
   font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #9ca3af;
-  margin-bottom: 1rem;
+  letter-spacing: 0.12em;
+  color: #6b7a99;
+  margin-bottom: 1.25rem;
 }
 
-.report-bib-category {
+.rp-bib-cat {
   font-size: 0.6875rem;
   font-weight: 600;
   color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   margin: 1rem 0 0.375rem;
 }
 
-.report-bib-list {
+.rp-bib-list {
   list-style: none;
   padding: 0;
   margin: 0 0 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
 }
 
-.report-bib-list li {
+.rp-bib-list li {
   font-size: 0.8125rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #f5f5f3;
 }
 
-.report-bib-list a {
+.rp-bib-list a {
   color: #1d4ed8;
   text-decoration: none;
 }
+.rp-bib-list a:hover { text-decoration: underline; }
 
-.report-bib-list a:hover { text-decoration: underline; }
+/* Shared utilities */
+.rp-mono { font-family: ui-monospace, monospace; font-size: 0.8em; }
+.rp-muted { color: #9ca3af; font-style: italic; }
 
-.report-bib-meta {
-  color: #6b7280;
-  font-size: 0.75rem;
-}
+/* Global region badge */
+.badge-region-global { background: #f1f5f9; color: #475569; }
