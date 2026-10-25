@@ -1,8 +1,8 @@
 # Kimika — Claude Code memory
 
 ## Project state
-- **Last completed step:** Step 2 (finance.py + tests, 73 passing)
-- **Next step:** Step 3 — `fetch.py` (blocklist + cache) + tests
+- **Last completed step:** Step 3 (fetch.py + tests, 130 passing)
+- **Next step:** Step 4 — `crosscheck.py` + tests
 
 ## Key facts
 - Python 3.14 (C:\Program Files\Python314\python.exe); use `python -m pytest -q`
