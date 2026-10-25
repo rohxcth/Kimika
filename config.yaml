@@ -30,7 +30,7 @@ crosscheck:
 # Deal research limits (free-tier friendly)
 pipeline:
   # Max full reports per run (Flash quota guard: stop before hitting the cap)
-  max_full_reports_per_run: 5
+  max_full_reports_per_run: 20
   # Characters to trim each document to before sending to the model
   doc_trim_chars: 8000
   # Cache TTL in hours (documents and LLM responses stored by content hash)

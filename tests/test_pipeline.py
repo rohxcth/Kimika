@@ -148,23 +148,6 @@ def test_index_upserts_existing_report(tmp_path, monkeypatch):
     assert len(index) == 1  # not duplicated
 
 
-def test_deal_wrap_sorts_last(tmp_path, monkeypatch):
-    monkeypatch.setattr("app.report._REPORTS_ROOT", tmp_path / "reports")
-    wrap = ReportData(
-        slug="deal-wrap-2026-10-26",
-        date=DATE_STR,
-        report_type="deal_wrap",
-        region="global",
-        title="Deal Wrap",
-        metadata={"deal_count": 3},
-    )
-    full = _stub_report(slug="full-report", val_usd=5000)
-    save_report(wrap)
-    save_report(full)
-    index = load_index(DATE_STR)
-    types = [e["report_type"] for e in index]
-    assert types[-1] == "deal_wrap"
-
 
 def test_load_index_missing_returns_empty(tmp_path, monkeypatch):
     monkeypatch.setattr("app.report._REPORTS_ROOT", tmp_path / "reports")
@@ -180,19 +163,6 @@ def test_index_ordering_three_deals(tmp_path, monkeypatch):
     slugs = [e["slug"] for e in index]
     assert slugs == ["large", "mid", "small"]
 
-
-def test_deal_wrap_sorts_last_multiple_full(tmp_path, monkeypatch):
-    monkeypatch.setattr("app.report._REPORTS_ROOT", tmp_path / "reports")
-    for slug, val in [("a", 5000), ("b", 1000), ("c", 200)]:
-        save_report(_stub_report(slug=slug, val_usd=val))
-    wrap = ReportData(
-        slug="deal-wrap", date=DATE_STR, report_type="deal_wrap",
-        region="global", title="Deal Wrap", metadata={},
-    )
-    save_report(wrap)
-    index = load_index(DATE_STR)
-    assert index[-1]["report_type"] == "deal_wrap"
-    assert index[0]["slug"] == "a"
 
 
 # ---------------------------------------------------------------------------
@@ -325,26 +295,6 @@ def test_llm_write_ma_report_returns_report_data(tmp_path):
     _llm.reset_quota_log()
 
 
-def test_llm_write_deal_wrap_returns_list(tmp_path):
-    import json as _json
-    from unittest.mock import MagicMock
-    mock_resp = MagicMock()
-    mock_resp.text = _json.dumps([
-        {"region": "AU", "deal_type": "M&A", "parties": "Acme Corp",
-         "size": "A$2bn", "key_term": "cash", "status": "Announced"}
-    ])
-    mock_client = MagicMock()
-    mock_client.models.generate_content.return_value = mock_resp
-    _llm._set_client(mock_client)
-    _llm._LLM_CACHE_DIR = tmp_path / "cache"
-
-    entries = _llm.write_deal_wrap([_raw_deal()], DATE_STR)
-    assert isinstance(entries, list)
-    assert len(entries) == 1
-    assert "region" in entries[0]
-    _llm._set_client(None)
-    _llm.reset_quota_log()
-
 
 def test_llm_quota_log():
     log = _llm.quota_log()
@@ -369,7 +319,6 @@ def test_pipeline_run_writes_files(tmp_path, monkeypatch):
         ]),
         patch("app.pipeline.fetch", return_value="<html>Filing content</html>"),
         patch("app.pipeline.llm.write_ma_report", return_value=stub_report),
-        patch("app.pipeline.llm.write_deal_wrap", return_value=[]),
         patch("app.pipeline.save_report", wraps=lambda r: save_report.__wrapped__(r) if hasattr(save_report, '__wrapped__') else _save_to_tmp(r, tmp_path)),
     ):
         # Patch save_report directly in report module
@@ -382,13 +331,12 @@ def test_pipeline_run_writes_files(tmp_path, monkeypatch):
 
 
 def test_pipeline_run_no_deals(tmp_path, monkeypatch):
-    """Pipeline with zero discoveries should not crash and writes a wrap report."""
+    """Pipeline with zero discoveries should not crash."""
     monkeypatch.setattr("app.report._REPORTS_ROOT", tmp_path / "reports")
 
     with (
         patch("app.pipeline.discover_all", return_value=[]),
         patch("app.pipeline.llm.classify_deals", return_value=[]),
-        patch("app.pipeline.llm.write_deal_wrap", return_value=[]),
         patch("app.pipeline.save_report") as mock_save,
     ):
         mock_save.return_value = None
@@ -410,7 +358,6 @@ def test_pipeline_run_fetch_failure_continues(tmp_path, monkeypatch):
         ]),
         patch("app.pipeline.fetch", side_effect=Exception("timeout")),
         patch("app.pipeline.llm.write_ma_report", return_value=stub_rep),
-        patch("app.pipeline.llm.write_deal_wrap", return_value=[]),
         patch("app.pipeline.save_report") as mock_save,
     ):
         mock_save.return_value = None

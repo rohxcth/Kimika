@@ -1,4 +1,4 @@
-"""Kimika pipeline: Discover → Cross-verify → Pick → Research → Write → Verify → Save.
+"""Kimika pipeline: Discover → Classify → Pick → Research → Write → Verify → Save.
 
 Run manually:  python -m app.pipeline --now
 Run for a date: python -m app.pipeline --date 2026-10-26
@@ -7,8 +7,8 @@ Stages
 ------
 1. discover   — pull M&A candidates from EDGAR, ASX, RNS (app/sources.py)
 2. classify   — batch-classify with LLM (app/llm.py), filter to M&A
-3. pick       — rank by deal value (US$ equiv); top N get full reports, rest → wrap
-4. research   — fetch and trim the primary document for each full-report deal
+3. pick       — rank by deal value (US$ equiv); take top N for full reports
+4. research   — fetch and trim the primary document for each deal
 5. write      — call LLM to produce structured ReportData (app/llm.py)
 6. verify     — attach verification log to each report
 7. save       — write report.json + update index.json (app/report.py)
@@ -60,9 +60,8 @@ def run(date_str: str | None = None) -> dict:
     # 3. Pick: rank by deal value; top N get full reports
     ranked = _rank_deals(ma_deals)
     full_deals = ranked[:_MAX_FULL]
-    wrap_deals = ranked[_MAX_FULL:]
 
-    # 4 + 5 + 6. Research → Write → Verify for each full-report deal
+    # 4 + 5 + 6. Research → Write → Verify for each deal
     saved_reports: list[ReportData] = []
     for deal in full_deals:
         report = _research_write_verify(deal, date_str)
@@ -70,20 +69,14 @@ def run(date_str: str | None = None) -> dict:
             save_report(report)
             saved_reports.append(report)
 
-    # 7. Deal wrap (LLM writes compact entries, saved as one deal_wrap report)
-    if wrap_deals or (not full_deals):
-        wrap_report = _build_wrap_report(wrap_deals, date_str)
-        save_report(wrap_report)
-
     quota = llm.quota_log()
     logger.info(
-        "Pipeline done: %d full reports, %d wrap entries, quota=%s",
-        len(saved_reports), len(wrap_deals), quota,
+        "Pipeline done: %d full reports, quota=%s",
+        len(saved_reports), quota,
     )
     return {
         "date": date_str,
         "full_reports": len(saved_reports),
-        "wrap_entries": len(wrap_deals),
         "quota": quota,
     }
 
@@ -167,22 +160,6 @@ def _stub_verification(report: ReportData) -> list[dict]:
         }
     ]
 
-
-def _build_wrap_report(wrap_deals: list[RawDeal], date_str: str) -> ReportData:
-    """Build the deal wrap ReportData from the remaining (non-full-report) deals."""
-    entries = llm.write_deal_wrap(wrap_deals, date_str)
-    return ReportData(
-        slug=f"deal-wrap-{date_str}",
-        date=date_str,
-        report_type="deal_wrap",
-        region="global",
-        title=f"Deal Wrap — {date_str}",
-        key_takeaways=[f"{len(wrap_deals)} additional deals today"],
-        sections={"entries": entries},   # list, not string — renderer handles both
-        verification_log=[],
-        bibliography=[],
-        metadata={"deal_count": len(wrap_deals)},
-    )
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 """Kimika LLM interface — Google Gemini (free tier).
 
 Model routing:
-  Flash-Lite  →  classify_deals, write_deal_wrap   (volume; batched)
-  Flash       →  write_ma_report                   (quality; one per report)
+  Flash-Lite  →  classify_deals   (volume; batched)
+  Flash       →  write_ma_report  (quality; one per report)
 
 Model names and daily caps come from config.yaml — never hard-coded here.
 
@@ -24,7 +24,6 @@ them. If the JSON is still invalid, log and return the stub.
 Public interface (called by pipeline.py):
   classify_deals(raw_deals)                        → list[dict]
   write_ma_report(deal, doc, sources, date_str)    → ReportData
-  write_deal_wrap(deals, date_str)                 → list[dict]
   quota_log()                                      → dict[str, int]
 """
 
@@ -38,7 +37,7 @@ import time
 from pathlib import Path
 
 from app.config import cfg
-from app.prompts.ma_report import CLASSIFY_BATCH, DEAL_WRAP_ENTRY, MA_FULL_REPORT, SYSTEM
+from app.prompts.ma_report import CLASSIFY_BATCH, MA_FULL_REPORT, SYSTEM
 from app.report import ReportData, make_slug
 
 logger = logging.getLogger(__name__)
@@ -289,17 +288,6 @@ def _stub_ma_report(deal: dict, date_str: str) -> ReportData:
     )
 
 
-def _stub_wrap_entry(deal: dict) -> dict:
-    return {
-        "region": deal.get("region", "?"),
-        "deal_type": "M&A",
-        "parties": deal.get("company", "Unknown"),
-        "size": "Not publicly disclosed",
-        "key_term": "Not publicly disclosed",
-        "status": "Announced",
-        "context_line": f"Source: {deal.get('source', '?')}",
-    }
-
 
 # ---------------------------------------------------------------------------
 # Public interface
@@ -357,31 +345,6 @@ def write_ma_report(
     logger.warning("write_ma_report fell back to stub for: %s", deal.get("title"))
     return _stub_ma_report(deal, date_str)
 
-
-def write_deal_wrap(deals: list[dict], date_str: str) -> list[dict]:
-    """Write compact deal-wrap entries. Uses Flash-Lite (one batched request).
-
-    Returns a list of entry dicts. Falls back to stub if Gemini is unavailable.
-    """
-    if not deals:
-        return []
-
-    deals_json = json.dumps(
-        [{"title": d.get("title", ""), "source": d.get("source", ""),
-          "region": d.get("region", ""), "url": d.get("url", "")}
-         for d in deals],
-        indent=2,
-    )
-    prompt = DEAL_WRAP_ENTRY.format(deals_json=deals_json)
-    text = _call(_FLASH_LITE, "flash_lite", prompt)
-
-    if text:
-        parsed = _extract_json(text)
-        if isinstance(parsed, list) and len(parsed) == len(deals):
-            return parsed
-
-    logger.warning("write_deal_wrap fell back to stub for %d deals", len(deals))
-    return [_stub_wrap_entry(d) for d in deals]
 
 
 # ---------------------------------------------------------------------------

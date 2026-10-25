@@ -15,7 +15,6 @@ from app.main import app, _format_date, _format_usd, _section_title
 
 SAMPLE_DATE = "2026-10-26"
 SAMPLE_SLUG = "acme-corp-beta-ltd-a-2bn-scheme-mafull-au-2026-10-26"
-WRAP_SLUG   = "deal-wrap-2026-10-26"
 
 
 @pytest.fixture(scope="module")
@@ -71,11 +70,6 @@ def test_index_sample_date_shows_deal_title(client):
     assert r.status_code == 200
     assert "Acme Corp" in r.text or "Beta Ltd" in r.text
 
-
-def test_index_sample_date_shows_deal_wrap(client):
-    r = client.get(f"/?date={SAMPLE_DATE}")
-    assert r.status_code == 200
-    assert "Deal Wrap" in r.text or "wrap" in r.text.lower()
 
 
 def test_index_page_has_nav(client):
@@ -153,15 +147,6 @@ def test_api_report_has_verification_log(client):
     data = r.json()
     assert isinstance(data["verification_log"], list)
 
-
-def test_api_report_wrap(client):
-    r = client.get(f"/api/report/{SAMPLE_DATE}/{WRAP_SLUG}")
-    assert r.status_code == 200
-    data = r.json()
-    assert data["report_type"] == "deal_wrap"
-    entries = data["sections"].get("entries", [])
-    assert isinstance(entries, list)
-    assert len(entries) >= 1
 
 
 def test_api_report_not_found(client):

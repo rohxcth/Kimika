@@ -26,7 +26,6 @@ from app.llm import (
     classify_deals,
     quota_log,
     reset_quota_log,
-    write_deal_wrap,
     write_ma_report,
 )
 from app.report import ReportData
@@ -371,43 +370,6 @@ def test_write_ma_report_falls_back_to_stub_on_failure(tmp_path):
     assert isinstance(report, ReportData)
     assert "Stub" in report.key_takeaways[0]
 
-
-# ---------------------------------------------------------------------------
-# write_deal_wrap
-# ---------------------------------------------------------------------------
-
-WRAP_RESPONSE = json.dumps([
-    {"region": "AU", "deal_type": "M&A", "parties": "Acme Corp",
-     "size": "A$2bn", "key_term": "A$4.10 cash", "status": "Announced",
-     "context_line": "Board recommends acceptance."},
-])
-
-
-def test_write_deal_wrap_success(tmp_path):
-    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
-    mock_client = _make_mock_client(WRAP_RESPONSE)
-    llm_mod._set_client(mock_client)
-
-    result = write_deal_wrap([_raw_deal()], DATE_STR)
-    assert len(result) == 1
-    assert result[0]["region"] == "AU"
-    assert result[0]["size"] == "A$2bn"
-
-
-def test_write_deal_wrap_empty():
-    result = write_deal_wrap([], DATE_STR)
-    assert result == []
-
-
-def test_write_deal_wrap_falls_back_to_stub_on_failure(tmp_path):
-    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
-    mock_client = MagicMock()
-    mock_client.models.generate_content.side_effect = Exception("error")
-    llm_mod._set_client(mock_client)
-
-    result = write_deal_wrap([_raw_deal()], DATE_STR)
-    assert len(result) == 1
-    assert result[0]["parties"] == "Acme Corp"
 
 
 # ---------------------------------------------------------------------------
