@@ -1,8 +1,8 @@
 # Kimika — Claude Code memory
 
 ## Project state
-- **Last completed step:** Step 5 (sources.py + tests, 198 passing)
-- **Next step:** Step 6 — Pick → Research → Write → Verify → Save (big step — show plan first)
+- **Last completed step:** Step 6 (pipeline + report + llm stub + prompts, 227 passing)
+- **Next step:** Step 7 — llm.py: real Gemini client, model routing, quota tracking, 429 back-off (big step — show plan, need GEMINI_API_KEY in .env)
 
 ## Key facts
 - Python 3.14 (C:\Program Files\Python314\python.exe); use `python -m pytest -q`

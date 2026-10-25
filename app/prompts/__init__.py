@@ -1,0 +1,1 @@
+# Kimika prompt templates package

@@ -1,0 +1,16 @@
+{
+  "hits": {
+    "hits": [
+      {
+        "_id": "0001234567/000123456726000001",
+        "_source": {
+          "entity_name": "Acme Corp",
+          "form_type": "8-K",
+          "file_num": "001-12345",
+          "period_of_report": "2026-10-26",
+          "cik": "0001234567"
+        }
+      }
+    ]
+  }
+}
