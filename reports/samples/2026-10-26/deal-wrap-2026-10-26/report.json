@@ -1,0 +1,47 @@
+{
+  "slug": "deal-wrap-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "deal_wrap",
+  "region": "global",
+  "title": "Deal Wrap \u2014 26 Oct 2026",
+  "key_takeaways": [
+    "3 additional deals today across AU, US and UK."
+  ],
+  "sections": {
+    "entries": [
+      {
+        "region": "US",
+        "deal_type": "M&A",
+        "parties": "TechCo Inc / StartUp Labs",
+        "size": "US$450m",
+        "key_term": "US$12.50 cash per share, 24.8% premium",
+        "status": "SPA signed",
+        "context_line": "TechCo expands cloud analytics suite; HSR filing expected within 10 days."
+      },
+      {
+        "region": "UK",
+        "deal_type": "M&A",
+        "parties": "Global Resources plc / Northern Mining Ltd",
+        "size": "\u00a3320m",
+        "key_term": "\u00a32.40 cash per share, firm offer (Rule 2.7)",
+        "status": "Rule 2.7 firm offer",
+        "context_line": "CMA Phase 1 review expected; completion targeted Q1 2027."
+      },
+      {
+        "region": "AU",
+        "deal_type": "ECM",
+        "parties": "MidCap Energy Ltd",
+        "size": "A$85m",
+        "key_term": "A$1.15 per share, 8.7% discount to last close",
+        "status": "Placement priced",
+        "context_line": "Proceeds fund Phase 2 drilling programme; SPP to follow at the same price, capped at A$30k per holder."
+      }
+    ]
+  },
+  "verification_log": [],
+  "bibliography": [],
+  "metadata": {
+    "deal_count": 3
+  },
+  "updated_at": "2026-10-26T06:42:00Z"
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "slug": "acme-corp-beta-ltd-a-2bn-scheme-mafull-au-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "ma_full",
+    "region": "AU",
+    "title": "Acme Corp / Beta Ltd: A$2bn scheme",
+    "summary": "Beta Ltd acquires Acme Corp via scheme of arrangement at A$4.10 cash, a 31.2% premium to the undisturbed close.",
+    "deal_value_usd": 1300,
+    "updated_at": "2026-10-26T06:42:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "deal-wrap-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "deal_wrap",
+    "region": "global",
+    "title": "Deal Wrap — 26 Oct 2026",
+    "summary": "3 additional deals today across AU, US and UK.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-26T06:42:00Z",
+    "has_pdf": false
+  }
+]

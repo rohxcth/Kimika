@@ -5,6 +5,4 @@ Rules added after real mistakes during the build. Each lesson follows one format
 Format:
 - **[date] What went wrong** → **Rule going forward**
 
-<!-- Example (delete once you have a real one):
-- **2026-10-26 Extractor read "$45m" as 45 instead of 45,000,000** → Always convert m/bn/k suffixes to full numbers; add a test for each suffix.
--->
+- **2026-10-26 Starlette 0.41+ changed `TemplateResponse` signature** — old call `TemplateResponse("page.html", {"request": request, ...})` silently passed the context dict as the template *name*, causing `TypeError: unhashable type 'dict'`. → Always call `TemplateResponse(request=request, name="page.html", context={...})` with keyword args; the new API adds `request` to context automatically.

@@ -1,0 +1,169 @@
+/* ── Kimika page styles ── */
+
+/* Section labels */
+.section-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.subsection-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s;
+}
+.card-header:hover { background: #f9fafb; }
+
+/* Badges */
+.badge-type {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #0f2044;
+  color: white;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+.badge-region {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #eff6ff;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+/* PDF buttons */
+.btn-pdf {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: #1d4ed8;
+  color: white;
+  padding: 0.3rem 0.75rem;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  transition: background 0.1s;
+}
+.btn-pdf:hover { background: #1e40af; }
+
+.btn-pdf-disabled {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #d1d5db;
+  border: 1px solid #e5e7eb;
+  padding: 0.3rem 0.75rem;
+  border-radius: 0.25rem;
+  cursor: not-allowed;
+}
+
+/* Deal wrap table header */
+.wrap-th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ── Prose-kimika: styles for markdown-rendered report sections ── */
+.prose-kimika {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.prose-kimika p {
+  margin: 0 0 0.75rem;
+}
+
+.prose-kimika ul, .prose-kimika ol {
+  margin: 0 0 0.75rem 1.25rem;
+}
+
+.prose-kimika li {
+  margin-bottom: 0.25rem;
+}
+
+.prose-kimika strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.prose-kimika h1, .prose-kimika h2, .prose-kimika h3, .prose-kimika h4 {
+  font-weight: 600;
+  color: #111827;
+  margin: 0.75rem 0 0.375rem;
+}
+
+/* Tables from markdown */
+.prose-kimika table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.75rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.prose-kimika table th,
+.prose-kimika table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose-kimika table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* Right-align numbers in table cells (heuristic: cell starts with digit/currency) */
+.prose-kimika table td:nth-child(2) {
+  font-family: ui-monospace, monospace;
+}
+
+/* Horizontal rule */
+.prose-kimika hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1rem 0;
+}
+
+/* Code */
+.prose-kimika code {
+  background: #f3f4f6;
+  padding: 0.1em 0.35em;
+  border-radius: 0.2em;
+  font-size: 0.875em;
+}
