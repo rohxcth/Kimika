@@ -7,7 +7,7 @@ function toggleCard(slug) {
 
   const isHidden = body.classList.contains('hidden');
   body.classList.toggle('hidden', !isHidden);
-  if (arrow) arrow.innerHTML = isHidden ? '&#9660;' : '&#9654;';
+  if (arrow) arrow.classList.toggle('open', isHidden);
 }
 
 function toggleVerification(slug) {
