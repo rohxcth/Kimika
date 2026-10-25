@@ -2,20 +2,10 @@
 
 Readers are Rohith and IB analysts reading daily to understand what's happening around them. Write precisely and densely; no basic explanations. **Neutral tone that follows the market**: read multiple sources and present the consensus view; where views are split, give each side and how the market leans. **No in-text citations**; every report ends with a **Bibliography**.
 
-**Every report is standalone**: one report per deal, plus one daily Economy & Markets report. Each has its own header, key takeaways, body, outlook and bibliography, and downloads as its own PDF at **11pt**. Deal reports are **1–2 pages**; the Economy & Markets report is **2–4 pages**. Use numbered sub-sections in the order below. If a section has nothing public, write "Not publicly disclosed" in one line; typical process may follow under **General context**.
+**Every report is standalone**: one report per deal, plus one daily Economy & Markets report. Each has its own header, key takeaways, body, outlook and bibliography, displayed in full in the browser. Use numbered sub-sections in the order below. If a section has nothing public, write "Not publicly disclosed" in one line; typical process may follow under **General context**.
 
 ---
 
-## Deal wrap (page only: smaller deals without their own report, largest first)
-Compact table, grouped by type, then region (US · AU · UK), **largest deal first**. If there are more deals than fit, drop the smallest:
-
-| Region | Type | Parties | Size | Key term | Status |
-|---|---|---|---|---|---|
-| AU | M&A | Bidder / Target | A$1.2bn | A$4.10 cash, 31.2% premium | SID signed |
-
-Optionally one line of context beneath an entry. Deals that have their own report are not repeated here.
-
----
 
 ## M&A deal report (one per deal)
 1. **Deal snapshot** (table): acquirer, target, structure (scheme / takeover / merger / asset deal), consideration, offer price, premium (and reference), implied equity value, EV, key multiples, conditions, expected timetable, status, advisers

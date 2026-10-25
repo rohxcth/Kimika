@@ -2,7 +2,7 @@
 
 ## 1. What Kimika is
 
-A **one-page web app** that runs **every day** and publishes **separate, standalone investment-banking-lens reports**: **one report per deal**, plus **one daily Economy & Markets report** (economy, equities, commodities, debt, currencies). It finds stories from **multiple public sources**, **cross-verifies** every figure, researches deals from primary documents, and posts new reports each morning. **Each report downloads as its own professional PDF.** It's a daily read for **Rohith and investment banking analysts** to understand what is happening around them: deals, the macroeconomic landscape and policy, and where things are likely heading.
+A **one-page web app** that runs **every day** and publishes **separate, standalone investment-banking-lens reports**: **one report per deal**, plus **one daily Economy & Markets report** (economy, equities, commodities, debt, currencies). It finds stories from **multiple public sources**, **cross-verifies** every figure, researches deals from primary documents, and posts new reports each morning. Reports are read in the browser — one expandable card per report on the page. It's a daily read for **Rohith and investment banking analysts** to understand what is happening around them: deals, the macroeconomic landscape and policy, and where things are likely heading.
 
 - **Brand:** Kimika
 - **Deal focus:** United States, Australia, United Kingdom. No minimum deal size; cover as many deals as possible.
@@ -19,32 +19,29 @@ A **one-page web app** that runs **every day** and publishes **separate, standal
 The page is a list of **report cards**, grouped the way Rohith reads:
 
 ```
-KIMIKA · Monday 26 October 2026 · Updated 6:42am AEDT                [Date ▾]
+KIMIKA
 
-DEALS
-  M&A      [Report card] [Report card] …     ← one report per deal
-  ECM      [Report card] …
-  DCM      [Report card] …
-  Other    [Report card] …
-  Deal wrap  (smaller deals without their own report, one line each)
-ECONOMY & MARKETS   [Today's Economy & Markets report]   (one report: Economy · Equities · Commodities · Debt · Currencies)
+M&A   |  ECM   |  DCM   |  Economy   |  Equities   |  Commodities   |  Bonds   |  Currencies
+────────────────────────────────────────────────────────────────────────────────────────────
+[Card] [Card]    [Card]    [Card]        [Card]         [Card]           [Card]     [Card]
+[Card]
+…
+← 8 vertical columns, horizontally scrollable; each column shows its report cards stacked
 ```
 
-- **Report card:** title (e.g. "BHP / Anglo American: US$49bn scheme"), deal type, region, size, date, one-line summary, verification badge, and a **[Download PDF]** button.
-- Clicking a card opens the full report in place (expand/collapse); the same content as its PDF.
-- **Every report is self-contained** and ends with a bibliography. A small "Verification" toggle on each card shows the figure-by-figure verification log (page only, not in the PDF).
-- Ongoing deals keep **one report per deal**: when a new stage happens (competing bid, scheme booklet, vote), the report is updated and the card shows "Updated 12 Nov".
-- Sticky section nav (Deals · Economy & Markets); date dropdown for previous days.
-- Clean, minimal, readable on desktop and phone.
+- **Report card:** title (e.g. "BHP / Anglo American: US$49bn scheme"), region badge, deal value, one-line summary. Clicking expands the full report in place.
+- **Every report is self-contained** and ends with a bibliography. A small "Verification" toggle on each card shows the figure-by-figure verification log.
+- Ongoing deals keep **one report per deal**: when a new stage happens (competing bid, scheme booklet, vote), the report is updated.
+- Empty columns are shown with a placeholder when no reports exist for that type today.
+- Clean, minimal, readable on desktop.
 
 ---
 
 ## 3. Coverage
 
-### 3.1 Deals: two tiers (breadth within free-tier limits)
-- **Deal wrap (breadth):** every deal discovered that day across the US, Australia and the UK, grouped by type (M&A, ECM, DCM, Other) and region, **largest first**. Each entry has the parties, size, structure, key term, status and a source link, in 2–3 lines. Written by Gemini Flash-Lite.
-- **Full reports (depth):** the **largest deals by value** get a full 1–2 page report, as many as the daily Gemini free-tier quota allows (`config.yaml`), realistically a few per day.
-- **Prioritise size.** Whenever there are more deals than the free-tier quota or page space can cover, keep the biggest deals (by deal value in US$ equivalent) and drop the smallest first, in both the full reports and the deal wrap. Ongoing deals reappear with an update when they hit a new stage (competing bid, scheme booklet, IER, vote, court approval, completion).
+### 3.1 Deals: one full report per deal
+- Every deal discovered gets its own full report. The **largest deals by value** are covered first; smaller deals are covered as quota allows (`config.yaml`, `max_full_reports_per_run`).
+- **Prioritise size.** When there are more deals than the free-tier quota allows, keep the biggest deals (by deal value in US$ equivalent) and drop the smallest first. Ongoing deals reappear with an update when they hit a new stage (competing bid, scheme booklet, IER, vote, court approval, completion).
 
 ### 3.2 Economy & Markets report (one per day)
 
@@ -83,7 +80,7 @@ One report, five sections in this order: **Economy · Equities · Commodities ·
 Runs **daily at 6:30am Sydney time**. If the laptop was asleep or off, the app runs on next startup.
 
 ```
-Discover → Cross-verify → Pick → Research → Write → Verify → Save (JSON + PDF)
+Discover → Cross-verify → Pick → Research → Write → Verify → Save (JSON)
 ```
 
 1. **Discover:** pull candidates from multiple public sources (`docs/sources.md`):
@@ -95,11 +92,11 @@ Discover → Cross-verify → Pick → Research → Write → Verify → Save (J
    - News facts: ≥2 independent publishers, or 1 primary source
    - Deal terms: the primary filing is the source of truth, and news coverage is checked against it
    - **Conflicts:** search for more sources and go with what they support (primary outranks secondary). If none exist, pick the most authoritative source and record the choice and the reason.
-3. **Pick:** Gemini Flash-Lite classifies everything in batched requests (M&A/ECM/DCM/Other, region, size, stage). Deals are ranked by **deal value (US$ equivalent)**. The largest get full reports; the deal wrap lists as many as fit, largest first. Undisclosed values rank by the company's market cap as a proxy.
+3. **Pick:** Gemini Flash-Lite classifies everything in batched requests (M&A/ECM/DCM/Other, region, size, stage). Deals are ranked by **deal value (US$ equivalent)**. The largest get full reports up to the daily quota cap. Undisclosed values rank by the company's market cap as a proxy.
 4. **Research:** for full reports, fetch the primary documents and trim to the relevant sections (terms, background/negotiations, IER/fairness opinion summary, financing). For every report, also read **multiple independent commentary sources** to establish the market consensus and the main alternative views.
-5. **Write:** Gemini Flash writes full deal reports and the Economy & Markets report as structured JSON following the templates; Flash-Lite writes the deal wrap and helper summaries.
+5. **Write:** Gemini Flash writes full deal reports and the Economy & Markets report as structured JSON following the templates; Flash-Lite handles classification and helper summaries.
 6. **Verify:** derived figures computed in Python (`app/finance.py`); stated figures must have a short quote found in the source; every figure gets a status (✅ Verified · ✅ Resolved · 🔁 Recomputed · ❓ Single source), stored in the report's JSON verification log, not printed in the report body.
-7. **Save:** one folder per report, `reports/YYYY-MM-DD/<report-slug>/report.json` + `report.pdf`, plus `reports/YYYY-MM-DD/index.json` listing the day's reports for the page. Ongoing deals: the report lives under the deal's slug and keeps a version history.
+7. **Save:** one folder per report, `reports/YYYY-MM-DD/<report-slug>/report.json`, plus `reports/YYYY-MM-DD/index.json` listing the day's reports for the page. Ongoing deals: the report lives under the deal's slug and keeps a version history.
 
 ### Cost: zero (free tiers only)
 - **AI:** Google Gemini API free tier: no billing account, no credit card. Key from Google AI Studio.
@@ -117,23 +114,14 @@ Discover → Cross-verify → Pick → Research → Write → Verify → Save (J
 
 ---
 
-## 6. PDF format
+## 6. Report display
 
-Readers are IB analysts and finance professionals, so it must look like a sell-side publication.
+Reports are read in the browser — full content is shown inline when a card is expanded. No PDF generation in the current version (intentional decision: get the product running first; PDF export can be added later if wanted).
 
-- **Page:** A4, 18–20mm margins, **11pt body**, 1.3 line height
-- **Type:** serif body (e.g. Source Serif 4), sans-serif headings and tables (e.g. Inter); restrained colour: navy plus one accent
-- **One PDF per report.** No combined daily document.
-- **Header block (top of page 1, not a separate cover):** Kimika wordmark, report type tag (e.g. M&A · AU), title, date published / last updated, and a 3-line key takeaways summary
-- **Deal reports:** 1–2 pages, numbered sub-sections, snapshot table at the top, thin-ruled tables, right-aligned numbers, consistent units (A$m, US$m, £m, %, bps)
-- **Economy & Markets report:** 2–4 pages, same style; one section each for Economy, Equities, Commodities, Debt, Currencies, each opening with a levels/moves table
-- **Deal wrap:** shown on the page only (no PDF needed); add a PDF later if wanted
-- **Callouts:** "Market view", "Outlook & scenarios" and "General context" in subtle shaded boxes
-- **Header/footer:** "Kimika · [Report title] · 26 Oct 2026"; "Page X of Y"
-- **No in-text citations.** Clean prose; no footnote numbers or bracketed references
-- **Bibliography:** at the end of each report, sources grouped (Filings & announcements · Central banks & official data · Market data · Commentary & news), with title, publisher, date and link
-- **Disclaimer** (footer of the last page): *"Prepared from public sources for information purposes only. Not financial advice. Views reflect a synthesis of public market commentary, not Kimika's own recommendations."*
-- **File name:** `Kimika_<Type>_<Title>_<YYYY-MM-DD>.pdf`, e.g. `Kimika_MA_BHP-Anglo_2026-10-26.pdf`
+Report content rules still apply regardless of display format:
+- No in-text citations. Clean prose.
+- Bibliography at the end of each report, grouped: Filings & announcements · Central banks & official data · Market data · Commentary & news.
+- Disclaimer visible on every report: *"Prepared from public sources for information purposes only. Not financial advice. Views reflect a synthesis of public market commentary, not Kimika's own recommendations."*
 
 ---
 
@@ -146,7 +134,7 @@ Readers are IB analysts and finance professionals, so it must look like a sell-s
 | AI | **Google Gemini API (free tier)** via the official `google-genai` Python SDK: Flash-Lite for volume tasks, Flash for full reports; model names in `config.yaml` |
 | Market & company data | **FMP API** + yfinance + FRED / central bank data (cross-checks) |
 | Filings | SEC EDGAR, ASX announcements, UK RNS / Takeover Panel, central bank feeds |
-| PDF | **reportlab** (WeasyPrint requires GTK3 system libs not available on Windows without a separate installer) |
+| PDF | Not implemented (intentional; can be added later) |
 | Storage | Plain files in `reports/YYYY-MM-DD/` (no database) |
 | Tests | pytest, synthetic data, no network |
 
@@ -163,16 +151,16 @@ kimika/
 ├── config.yaml             # schedule, models + daily request caps, limits, tolerances, blocklist
 ├── .env.example            # GEMINI_API_KEY=, FMP_API_KEY=, FRED_API_KEY=, SEC_USER_AGENT=
 ├── app/
-│   ├── main.py             # FastAPI: page, PDF downloads, scheduler + catch-up
+│   ├── main.py             # FastAPI: page, scheduler + catch-up
 │   ├── pipeline.py         # discover → cross-verify → pick → research → write → verify → save
+│   ├── scheduler.py        # APScheduler daily run + missed-run catch-up
 │   ├── sources.py          # ASX, EDGAR, RNS, central banks, FMP, yfinance, FRED, RSS
 │   ├── crosscheck.py       # multi-source agreement + conflict resolution
 │   ├── fetch.py            # blocklist-enforcing fetcher + cache
 │   ├── finance.py          # all finance calculations
 │   ├── llm.py              # Gemini calls, model routing, quota tracking, 429 back-off
 │   ├── prompts/            # one prompt per report type
-│   ├── pdf.py              # WeasyPrint rendering
-│   └── templates/          # page.html, report_pdf.html, pdf.css
+│   └── templates/          # page.html
 ├── tests/
 └── reports/                # generated (commit 1–2 sample days)
 ```
@@ -187,10 +175,10 @@ kimika/
 3. `fetch.py` (blocklist + cache) + tests, including a test proving an AFR URL is refused
 4. `crosscheck.py` + tests (agreement, tolerance, conflict resolution with a third source, single-source fallback)
 5. Discover M&A: SEC EDGAR + ASX + UK RNS
-6. Pick → Research → Write → Verify → Save, for the deal wrap and full M&A reports
+6. Pick → Research → Write → Verify → Save, for full M&A reports
 7. `llm.py`: Gemini client, model routing, per-model request caps, 429 back-off
-8. The page: report cards (Deals › M&A + deal wrap)
-9. PDF: professional per-report template + download button on each card
+8. The page: 8-column layout, report cards per deal type
+9. (PDF step removed — PDF export not implemented in current version)
 10. Scheduler (6:30am daily) + missed-run catch-up + `--now`
 11. Run on real days; fix errors; record them in `docs/lessons.md`
 
@@ -208,9 +196,9 @@ kimika/
 
 ## 10. Definition of done
 - [ ] Opening the app shows today's report cards, generated automatically every day
-- [ ] Each report downloads as its own professional PDF at 11pt; deal reports are 1–2 pages; one Economy & Markets report per day
+- [ ] Reports display in full in the browser; one Economy & Markets report per day (PDF export deferred)
 - [ ] Reports read cleanly with no in-text citations; each ends with a bibliography; every report has an outlook & scenarios section reflecting market consensus
-- [ ] At least 3 M&A deal reports (US, AU, UK) with negotiation and valuation sections from primary documents; deal wrap lists the remaining deals, largest first
+- [ ] At least 3 M&A deal reports (US, AU, UK) with negotiation and valuation sections from primary documents; every discovered deal gets its own full report (no deal wrap)
 - [ ] Market figures cross-verified against ≥2 sources; conflicts resolved and recorded
 - [ ] Runs at zero cost on free tiers; quota log shows requests per model stay within limits
 - [ ] Finance figures computed in Python; `pytest` passes; blocklist proven by a test; no secrets in repo

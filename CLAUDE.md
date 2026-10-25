@@ -17,7 +17,7 @@ You are building this app. The app's own prompts (`app/prompts/`) must follow th
 - **The readers**: Rohith and IB analysts, reading every day to understand what is happening around them. Write at their level: precise, dense, no basic explanations, no hype.
 
 ## How to work
-1. **One step at a time**, following the tiered build order in `kimika-spec.md` section 9. Finish the step, run `pytest -q`, show the result (test output, the rendered page, or a sample PDF), then stop and wait for confirmation.
+1. **One step at a time**, following the tiered build order in `kimika-spec.md` section 9. Finish the step, run `pytest -q`, show the result (test output or the rendered page), then stop and wait for confirmation.
 2. **Tier discipline.** Finish Tier 1 before Tier 2. Tier 3 only when asked.
 3. Small, readable functions. Comment the finance logic. No clever abstractions.
 4. **Never let one failed source or story crash a run.** Log it and continue.
@@ -39,7 +39,7 @@ You are building this app. The app's own prompts (`app/prompts/`) must follow th
 - **Zero cost.** Kimika must run entirely on free tiers. The AI model is **Google Gemini on the free tier** (no billing account, no credit card). Never add a paid API, never enable billing, never suggest a paid plan as the fix.
 - **Free-tier rate limits are the budget.** Gemini's free tier has small daily request quotas per project (tight on Flash, larger on Flash-Lite), resetting at midnight Pacific time. Therefore:
   - Model names and per-model daily request caps live in `config.yaml`, never hard-coded. Check current model names and SDK usage with Context7, and current limits in Google AI Studio.
-  - **Flash-Lite** for volume work: discovery, classification (batch many items into one request), deal wrap, markets sections. **Flash** only for full deal reports and the Economy & Markets report.
+  - **Flash-Lite** for volume work: discovery, classification (batch many items into one request), markets sections. **Flash** only for full deal reports and the Economy & Markets report.
   - Count every request; stop starting new full reports before the cap is hit and publish what's done. Handle 429 (quota) errors gracefully: back off, never crash.
   - Cache documents and model responses by content hash. Trim documents to relevant sections before sending them.
   - Don't use Gemini's paid features (e.g. Google Search grounding); research uses Kimika's own fetchers.
@@ -62,14 +62,13 @@ You are building this app. The app's own prompts (`app/prompts/`) must follow th
 6. **Outlook and scenarios.** Every report ends with what is likely to happen next and how outcomes change under different conditions (e.g. "if the RBA holds vs cuts", "if a counter-bid emerges", "if the ACCC objects"). Forecasts and probabilities come from public sources or market pricing, never invented.
 7. **Primary documents first** for facts: announcements, scheme booklets, Independent Expert's Reports, SEC proxies and fairness opinions, UK Rule 2.7 announcements and scheme documents, prospectuses, central bank statements.
 8. **Never present speculation as fact.** If something isn't public, say "Not publicly disclosed".
-9. **No in-text citations.** No footnote numbers, bracketed references or source names cluttering the prose. Each report ends with a **Bibliography** listing the sources used. Verification details live in the report's data file (and the page's verification view), not in the PDF body.
+9. **No in-text citations.** No footnote numbers, bracketed references or source names cluttering the prose. Each report ends with a **Bibliography** listing the sources used. Verification details live in the report's data file and the page's verification toggle.
 10. **Copyright.** Paraphrase sources. No reproduced passages.
 11. **Concise and professional.** No padding, no educational asides.
 12. **Breadth, prioritised by size.** Cover as many deals and as much of the markets as the free-tier limits allow. When not everything fits, prioritise the **largest deals by value** (US$ equivalent).
 
 ## PDF
-- Professional, distributable to finance professionals: A4, **11pt body**, clear section headings, consistent tables, page numbers, bibliography, disclaimer. **No in-text citations.** One PDF per report (no combined daily document); deal reports are **1–2 pages**, the Economy & Markets report **2–4 pages**, each ending with its own bibliography. See `kimika-spec.md` section 6.
-- Check a rendered PDF visually before calling a PDF step done.
+PDF export is not implemented (intentional decision for initial product). Reports are read in the browser. If added later, follow the content rules: no in-text citations, bibliography at end, disclaimer on every report.
 
 ## Commands
 - `uvicorn app.main:app --reload` starts the app
