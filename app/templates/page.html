@@ -117,7 +117,7 @@
       </div>
       <div class="col-body">
         {% if ma_entries %}
-          {% for entry in ma_entries %}
+          {% for entry in ma_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -137,7 +137,7 @@
       </div>
       <div class="col-body">
         {% if ecm_entries %}
-          {% for entry in ecm_entries %}
+          {% for entry in ecm_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -157,7 +157,7 @@
       </div>
       <div class="col-body">
         {% if dcm_entries %}
-          {% for entry in dcm_entries %}
+          {% for entry in dcm_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -177,7 +177,7 @@
       </div>
       <div class="col-body">
         {% if econ_entries %}
-          {% for entry in econ_entries %}
+          {% for entry in econ_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -197,7 +197,7 @@
       </div>
       <div class="col-body">
         {% if eq_entries %}
-          {% for entry in eq_entries %}
+          {% for entry in eq_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -217,7 +217,7 @@
       </div>
       <div class="col-body">
         {% if com_entries %}
-          {% for entry in com_entries %}
+          {% for entry in com_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -237,7 +237,7 @@
       </div>
       <div class="col-body">
         {% if bond_entries %}
-          {% for entry in bond_entries %}
+          {% for entry in bond_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
@@ -257,7 +257,7 @@
       </div>
       <div class="col-body">
         {% if fx_entries %}
-          {% for entry in fx_entries %}
+          {% for entry in fx_entries[:5] %}
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
