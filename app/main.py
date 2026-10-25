@@ -72,8 +72,18 @@ def _format_usd(val_m: float | None) -> str:
     return f"US${val_m:.0f}m"
 
 
+def _format_date_short(date_str: str) -> str:
+    """'2026-10-26' → '26 Oct 2026'"""
+    try:
+        d = datetime.fromisoformat(date_str)
+        return f"{d.day} {d.strftime('%b')} {d.year}"
+    except Exception:
+        return date_str
+
+
 templates.env.filters["section_title"] = _section_title
 templates.env.filters["format_usd"] = _format_usd
+templates.env.filters["format_date_short"] = _format_date_short
 templates.env.tests["list"] = lambda v: isinstance(v, list)
 
 
@@ -82,22 +92,20 @@ templates.env.tests["list"] = lambda v: isinstance(v, list)
 # ---------------------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, date: str | None = None):
-    date_str = date or _today()
-    entries = _load_index(date_str)
+async def index(request: Request):
+    entries = _load_all_entries()
     reports = {
-        e["slug"]: _prepare_report(date_str, e["slug"])
+        e["slug"]: _prepare_report(e["date"], e["slug"])
         for e in entries
     }
+    today = _today()
     return templates.TemplateResponse(
         request=request,
         name="page.html",
         context={
-            "page_date": date_str,
-            "display_date": _format_date(date_str),
+            "display_date": _format_date(today),
             "entries": entries,
             "reports": reports,
-            "available_dates": _available_dates(),
         },
     )
 
@@ -127,6 +135,19 @@ def health():
 
 def _today() -> str:
     return date.today().isoformat()
+
+
+def _load_all_entries(max_days: int = 30) -> list[dict]:
+    """Aggregate entries from all available dates, newest date first.
+
+    Within each date, larger deals sort above smaller ones (same ordering
+    as each day's index.json). Entries from real reports/ take precedence;
+    samples/ fills in any date that has no real reports yet.
+    """
+    all_entries: list[dict] = []
+    for date_str in _available_dates()[:max_days]:
+        all_entries.extend(_load_index(date_str))
+    return all_entries
 
 
 def _load_index(date_str: str) -> list[dict]:

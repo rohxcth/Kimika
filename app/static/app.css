@@ -107,6 +107,12 @@
   color: #374151;
 }
 
+.rcard-date {
+  font-size: 0.625rem;
+  color: #9ca3af;
+  margin-left: auto;
+}
+
 .rcard-chevron {
   width: 0;
   height: 0;

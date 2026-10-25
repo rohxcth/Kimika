@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, _format_date, _format_usd, _section_title
+from app.main import app, _format_date, _format_date_short, _format_usd, _section_title
 
 SAMPLE_DATE = "2026-10-26"
 SAMPLE_SLUG = "acme-corp-beta-ltd-a-2bn-scheme-mafull-au-2026-10-26"
@@ -52,23 +52,22 @@ def test_index_has_deals_section(client):
     assert "M&amp;A" in r.text or "M&A" in r.text
 
 
-def test_index_with_future_date_shows_empty_state(client):
-    r = client.get("/?date=2099-01-01")
+def test_index_tracker_shows_sample_cards(client):
+    # Tracker route always loads all available dates incl. samples
+    r = client.get("/")
     assert r.status_code == 200
-    assert "No M" in r.text  # "No M&A reports today." column empty state
+    assert "M" in r.text  # at minimum the M&A column badge
 
 
-def test_index_with_sample_date_shows_cards(client):
-    r = client.get(f"/?date={SAMPLE_DATE}")
-    assert r.status_code == 200
-    # Should contain the sample report title or M&A label
-    assert "M" in r.text  # at minimum the M&A badge
-
-
-def test_index_sample_date_shows_deal_title(client):
-    r = client.get(f"/?date={SAMPLE_DATE}")
+def test_index_tracker_shows_deal_title(client):
+    r = client.get("/")
     assert r.status_code == 200
     assert "Acme Corp" in r.text or "Beta Ltd" in r.text
+
+
+def test_index_tracker_shows_date_badge(client):
+    r = client.get("/")
+    assert "Oct 2026" in r.text  # date badge on sample entries
 
 
 
@@ -175,6 +174,14 @@ def test_api_report_not_found(client):
 # ---------------------------------------------------------------------------
 # Helper functions (unit tests, no HTTP)
 # ---------------------------------------------------------------------------
+
+def test_format_date_short_basic():
+    assert _format_date_short("2026-10-26") == "26 Oct 2026"
+
+
+def test_format_date_short_invalid():
+    assert _format_date_short("bad") == "bad"
+
 
 def test_format_date_basic():
     assert _format_date("2026-10-26") == "Monday 26 October 2026"

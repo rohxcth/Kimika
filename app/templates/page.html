@@ -15,8 +15,10 @@
   </header>
 
   <!-- Date bar -->
-  <div class="bg-white border-b border-gray-200 px-6 py-2">
+  <div class="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-3">
     <span class="text-xs text-gray-500 font-medium">{{ display_date }}</span>
+    <span class="text-xs text-gray-300">|</span>
+    <span class="text-xs text-gray-400">Rolling tracker - newest deals at top</span>
   </div>
 
   <!-- 8-column scroll layout -->
@@ -32,6 +34,7 @@
       {% if entry.deal_value_usd %}
       <span class="rcard-value">{{ entry.deal_value_usd | format_usd }}</span>
       {% endif %}
+      <span class="rcard-date">{{ entry.date | format_date_short }}</span>
     </div>
     <h3 class="rcard-title">{{ entry.title }}</h3>
     <p class="rcard-summary">{{ entry.summary }}</p>
@@ -124,7 +127,7 @@
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
-          <div class="col-empty">No M&amp;A reports today.</div>
+          <div class="col-empty">No M&amp;A reports yet.</div>
         {% endif %}
       </div>
     </div>
@@ -144,7 +147,7 @@
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
-          <div class="col-empty">No ECM reports today.</div>
+          <div class="col-empty">No ECM reports yet.</div>
         {% endif %}
       </div>
     </div>
@@ -164,7 +167,7 @@
           {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
-          <div class="col-empty">No DCM reports today.</div>
+          <div class="col-empty">No DCM reports yet.</div>
         {% endif %}
       </div>
     </div>
