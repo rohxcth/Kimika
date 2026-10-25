@@ -222,3 +222,33 @@ def test_section_title_multi_word():
 
 def test_section_title_no_number():
     assert _section_title("entries") == "Entries"
+
+
+# ---------------------------------------------------------------------------
+# Report detail page
+# ---------------------------------------------------------------------------
+
+def test_report_page_200(client):
+    r = client.get(f"/report/{SAMPLE_DATE}/{SAMPLE_SLUG}")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+
+
+def test_report_page_contains_title(client):
+    r = client.get(f"/report/{SAMPLE_DATE}/{SAMPLE_SLUG}")
+    assert "Acme Corp" in r.text or "Beta Ltd" in r.text
+
+
+def test_report_page_contains_back_link(client):
+    r = client.get(f"/report/{SAMPLE_DATE}/{SAMPLE_SLUG}")
+    assert 'href="/"' in r.text
+
+
+def test_report_page_contains_kimika_header(client):
+    r = client.get(f"/report/{SAMPLE_DATE}/{SAMPLE_SLUG}")
+    assert "Kimika" in r.text
+
+
+def test_report_page_404_for_missing_slug(client):
+    r = client.get(f"/report/{SAMPLE_DATE}/nonexistent-slug-xyz")
+    assert r.status_code == 404

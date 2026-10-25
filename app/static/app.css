@@ -68,25 +68,23 @@
 
 /* ── Report cards ── */
 .rcard {
+  display: block;
+  text-decoration: none;
+  color: inherit;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   padding: 0.75rem;
-  cursor: pointer;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  transition: box-shadow 0.1s;
+  transition: box-shadow 0.15s, border-color 0.15s;
   position: relative;
-  /* fixed collapsed height so all cards align perfectly */
   height: 9.75rem;
   overflow: hidden;
 }
-/* let the card grow when expanded */
-.rcard.expanded {
-  height: auto;
-  overflow: visible;
+.rcard:hover {
+  box-shadow: 0 3px 10px rgba(0,0,0,0.10);
+  border-color: #c7d2fe;
 }
-.rcard:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-
 .rcard-top {
   display: flex;
   align-items: center;
@@ -131,41 +129,6 @@
   margin-left: auto;
 }
 
-.rcard-chevron {
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid #d1d5db;
-  margin-left: auto;
-  margin-top: 2px;
-  transition: transform 0.15s ease;
-}
-.rcard-chevron.open {
-  transform: rotate(180deg);
-}
-
-/* Expanded body inside rcard */
-.rcard-body {
-  border-top: 1px solid #f3f4f6;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-}
-
-.rcard-section {
-  padding: 0.625rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-.rcard-section:last-child { border-bottom: none; }
-
-.rcard-section-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #9ca3af;
-  margin-bottom: 0.375rem;
-}
 
 /* Updated badge */
 .badge-updated {
@@ -244,4 +207,220 @@
   padding: 0.1em 0.3em;
   border-radius: 0.2em;
   font-size: 0.875em;
+}
+
+/* ── Report detail page ── */
+
+.report-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.report-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.report-type-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #9ca3af;
+}
+
+.report-meta-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+.report-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f2044;
+  line-height: 1.25;
+  margin-bottom: 1.5rem;
+}
+
+.report-takeaways {
+  background: #f0f4ff;
+  border-left: 3px solid #0f2044;
+  border-radius: 0 0.375rem 0.375rem 0;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.report-takeaways-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #0f2044;
+  margin-bottom: 0.625rem;
+}
+
+.report-takeaways-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-takeaways-list li {
+  font-size: 0.875rem;
+  color: #1e3a6e;
+  line-height: 1.5;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.report-takeaways-list li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+  color: #0f2044;
+}
+
+.report-section {
+  margin-bottom: 0.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-section:last-of-type {
+  border-bottom: none;
+}
+
+/* Override prose sizes for the detail page — larger and more readable */
+.report-page .prose-kimika {
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.report-page .prose-kimika h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f2044;
+  margin: 1.5rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-page .prose-kimika h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 1.25rem 0 0.375rem;
+}
+
+.report-page .prose-kimika p {
+  margin: 0 0 0.875rem;
+}
+
+.report-page .prose-kimika table {
+  font-size: 0.8125rem;
+  margin: 1rem 0;
+}
+
+/* Verification section */
+.report-verify-wrap {
+  margin: 2rem 0 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.report-verify-toggle {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.report-verify-toggle:hover { color: #374151; }
+
+.report-verify-body {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+
+.report-verify-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.report-verify-table th,
+.report-verify-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.report-verify-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* Bibliography */
+.report-bibliography {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.report-bibliography-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.report-bib-category {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1rem 0 0.375rem;
+}
+
+.report-bib-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.report-bib-list li {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.report-bib-list a {
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.report-bib-list a:hover { text-decoration: underline; }
+
+.report-bib-meta {
+  color: #6b7280;
+  font-size: 0.75rem;
 }

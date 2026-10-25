@@ -110,6 +110,23 @@ async def index(request: Request):
     )
 
 
+@app.get("/report/{date_str}/{slug}", response_class=HTMLResponse)
+async def report_page(request: Request, date_str: str, slug: str):
+    report = _prepare_report(date_str, slug)
+    if report is None:
+        raise HTTPException(404, "Report not found")
+    # Find the index entry so we have version_count / deal_value_usd
+    entry = next(
+        (e for e in _load_index(date_str) if e["slug"] == slug),
+        {},
+    )
+    return templates.TemplateResponse(
+        request=request,
+        name="report.html",
+        context={"report": report, "entry": entry},
+    )
+
+
 @app.get("/api/index/{date_str}")
 async def api_index(date_str: str):
     return JSONResponse(_load_index(date_str))

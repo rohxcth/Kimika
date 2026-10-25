@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ report.title }} — Kimika</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="bg-[#f5f5f3] text-gray-900 antialiased">
+
+  <!-- Header -->
+  <header class="bg-[#0f2044] text-white px-6 py-3 flex items-center gap-5">
+    <a href="/" class="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11L5 7l4-4"/>
+      </svg>
+      Back
+    </a>
+    <span class="font-bold tracking-[0.2em] uppercase text-sm">Kimika</span>
+  </header>
+
+  <!-- Report page -->
+  <main class="report-page">
+
+    <!-- Meta row -->
+    <div class="report-meta-row">
+      <span class="badge-region badge-region-{{ report.region | lower }}">{{ report.region }}</span>
+      {% if entry.version_count and entry.version_count > 0 %}
+      <span class="badge-updated">Updated</span>
+      {% endif %}
+      <span class="report-type-label">{{ report.report_type | replace("_", " ") | upper }}</span>
+      <span class="report-meta-date">{{ report.date | format_date_short }}</span>
+    </div>
+
+    <!-- Title -->
+    <h1 class="report-title">{{ report.title }}</h1>
+
+    <!-- Key takeaways -->
+    {% if report.key_takeaways %}
+    <div class="report-takeaways">
+      <p class="report-takeaways-label">Key takeaways</p>
+      <ul class="report-takeaways-list">
+        {% for kt in report.key_takeaways %}
+        <li>{{ kt }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Body sections (exclude bibliography key — rendered separately) -->
+    {% for key, html in report.rendered_sections.items() %}
+      {% if "bibliography" not in key %}
+      <div class="report-section prose-kimika">
+        {{ html | safe }}
+      </div>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Verification log (collapsible) -->
+    {% if report.verification_log %}
+    <div class="report-verify-wrap">
+      <button onclick="toggleVerification('main')" class="report-verify-toggle">
+        Verification log ({{ report.verification_log | length }} figures)
+      </button>
+      <div id="verify-main" class="hidden report-verify-body">
+        <table class="report-verify-table">
+          <thead>
+            <tr>
+              <th>Figure</th>
+              <th>Value</th>
+              <th>Status</th>
+              <th>Sources</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in report.verification_log %}
+            <tr>
+              <td>{{ item.figure }}</td>
+              <td class="font-mono">{{ item.value }}</td>
+              <td>{{ item.status }}</td>
+              <td>{{ item.sources | join(", ") }}</td>
+              <td class="text-gray-500">{{ item.note or "" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Bibliography -->
+    {% if report.bibliography %}
+    <div class="report-bibliography">
+      <p class="report-bibliography-label">Bibliography</p>
+      {% set ns = namespace(current_cat="") %}
+      {% for b in report.bibliography %}
+        {% if b.category != ns.current_cat %}
+          {% if ns.current_cat != "" %}</ul>{% endif %}
+          <p class="report-bib-category">{{ b.category }}</p>
+          <ul class="report-bib-list">
+          {% set ns.current_cat = b.category %}
+        {% endif %}
+        <li>
+          <a href="{{ b.url }}" target="_blank" rel="noopener noreferrer">{{ b.title }}</a>
+          <span class="report-bib-meta"> — {{ b.publisher }}, {{ b.date }}</span>
+        </li>
+      {% endfor %}
+      {% if report.bibliography %}</ul>{% endif %}
+    </div>
+    {% endif %}
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
