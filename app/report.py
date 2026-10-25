@@ -84,6 +84,10 @@ def make_slug(title: str, region: str, report_type: str, date_str: str) -> str:
 def save_report(report: ReportData) -> Path:
     """Write report.json for a single report and update the day's index.json.
 
+    If a report.json already exists at this path (i.e. the deal is being
+    updated), the old version is archived to versions/<old_updated_at>.json
+    before overwriting so the full history is preserved.
+
     Returns the path to the saved report.json.
     """
     import datetime as _dt
@@ -93,6 +97,11 @@ def save_report(report: ReportData) -> Path:
     report_dir.mkdir(parents=True, exist_ok=True)
 
     report_path = report_dir / "report.json"
+
+    # Archive the existing version before overwriting
+    if report_path.exists():
+        _archive_version(report_path, report_dir)
+
     report_path.write_text(
         json.dumps(report.to_dict(), indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -100,6 +109,23 @@ def save_report(report: ReportData) -> Path:
 
     _update_index(report)
     return report_path
+
+
+def _archive_version(report_path: Path, report_dir: Path) -> None:
+    """Copy the current report.json into versions/ using its updated_at timestamp."""
+    try:
+        old = json.loads(report_path.read_text(encoding="utf-8"))
+        # Use the stored updated_at as the archive filename; fall back to 'unknown'
+        ts = old.get("updated_at", "unknown").replace(":", "-").replace("Z", "")
+        versions_dir = report_dir / "versions"
+        versions_dir.mkdir(exist_ok=True)
+        archive_path = versions_dir / f"{ts}.json"
+        archive_path.write_text(
+            json.dumps(old, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass  # Never let archiving crash a save
 
 
 def load_report(date_str: str, slug: str) -> ReportData | None:
@@ -154,6 +180,8 @@ def _update_index(report: ReportData) -> None:
 
 def _index_entry(report: ReportData) -> dict:
     """Build the compact index entry shown on the web page."""
+    versions_dir = _REPORTS_ROOT / report.date / report.slug / "versions"
+    version_count = len(list(versions_dir.glob("*.json"))) if versions_dir.exists() else 0
     return {
         "slug": report.slug,
         "date": report.date,
@@ -164,4 +192,5 @@ def _index_entry(report: ReportData) -> dict:
         "deal_value_usd": report.metadata.get("deal_value_usd"),
         "updated_at": report.updated_at,
         "has_pdf": False,  # set to True by pdf.py after rendering
+        "version_count": version_count,
     }

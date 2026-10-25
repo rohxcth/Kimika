@@ -25,6 +25,9 @@
   <div class="rcard" onclick="toggleCard('{{ entry.slug }}')">
     <div class="rcard-top">
       <span class="badge-region badge-region-{{ entry.region | lower }}">{{ entry.region }}</span>
+      {% if entry.version_count and entry.version_count > 0 %}
+      <span class="badge-updated">Updated</span>
+      {% endif %}
       {% if entry.deal_value_usd %}
       <span class="rcard-value">{{ entry.deal_value_usd | format_usd }}</span>
       {% endif %}
