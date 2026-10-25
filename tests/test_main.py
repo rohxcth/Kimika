@@ -110,16 +110,16 @@ def test_api_index_contains_ma_report(client):
     assert SAMPLE_SLUG in slugs
 
 
-def test_api_index_contains_wrap_report(client):
+def test_api_index_contains_ma_report_type(client):
     r = client.get(f"/api/index/{SAMPLE_DATE}")
     types = [e["report_type"] for e in r.json()]
-    assert "deal_wrap" in types
+    assert "ma_full" in types
 
 
-def test_api_index_wrap_sorts_last(client):
+def test_api_index_ma_first(client):
     r = client.get(f"/api/index/{SAMPLE_DATE}")
     entries = r.json()
-    assert entries[-1]["report_type"] == "deal_wrap"
+    assert entries[0]["report_type"] == "ma_full"
 
 
 def test_api_index_missing_date_returns_empty(client):

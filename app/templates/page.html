@@ -3,55 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kimika — {{ display_date }}</title>
+  <title>Kimika</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased">
 
-  <!-- ─── Header ─── -->
-  <header class="bg-[#0f2044] text-white px-5 py-3 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-3 min-w-0">
-      <span class="font-bold tracking-[0.2em] uppercase text-sm shrink-0">Kimika</span>
-      <span class="text-slate-500 hidden sm:inline">·</span>
-      <span class="text-slate-300 text-sm hidden sm:inline truncate">{{ display_date }}</span>
-      {% if entries %}
-      <span class="text-slate-500 text-xs hidden md:inline">· Updated {{ entries[0].updated_at[11:16] }}Z</span>
-      {% endif %}
-    </div>
-    <div class="relative shrink-0">
-      <select id="date-select" onchange="navigateDate(this.value)"
-              class="bg-[#1a3a6e] text-white text-sm pl-3 pr-7 py-1.5 rounded border border-slate-600
-                     cursor-pointer appearance-none focus:outline-none focus:ring-1 focus:ring-blue-400">
-        <option value="{{ page_date }}">{{ display_date }}</option>
-        {% for d in available_dates %}{% if d != page_date %}
-        <option value="{{ d }}">{{ d }}</option>
-        {% endif %}{% endfor %}
-      </select>
-      <span class="absolute right-2 top-2 text-slate-400 pointer-events-none text-[10px]">&#9660;</span>
-    </div>
+  <!-- Header: wordmark only -->
+  <header class="bg-[#0f2044] text-white px-6 py-3">
+    <span class="font-bold tracking-[0.2em] uppercase text-sm">Kimika</span>
   </header>
 
-  <!-- ─── Sticky nav ─── -->
-  <nav class="sticky top-0 z-20 bg-white border-b border-gray-200 px-5 py-2 flex gap-5 text-sm shadow-sm">
-    <a href="#deals"   class="font-semibold text-[#0f2044] hover:text-blue-700 transition-colors">Deals</a>
-    <a href="#markets" class="text-gray-400 hover:text-gray-700 transition-colors">Economy &amp; Markets</a>
-  </nav>
+  <main class="max-w-6xl mx-auto px-5 py-8 space-y-10">
 
-  <main class="max-w-3xl mx-auto px-4 py-8 space-y-10">
-
-    <!-- ═══════════════════════════════════════════════ DEALS ═══ -->
+    <!-- Deals -->
     <section id="deals">
       <h2 class="section-label">Deals</h2>
 
-      {% set ma_reports  = entries | selectattr("report_type", "equalto", "ma_full")   | list %}
-      {% set wrap_report = entries | selectattr("report_type", "equalto", "deal_wrap") | list %}
+      {% set ma_reports = entries | selectattr("report_type", "equalto", "ma_full") | list %}
 
-      <!-- M&A full reports -->
       {% if ma_reports %}
-      <div class="mb-6">
+      <div class="mb-4">
         <h3 class="subsection-label">M&amp;A</h3>
-        <div class="space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {% for entry in ma_reports %}
           {% set report = reports.get(entry.slug) %}
           <div class="card">
@@ -76,10 +50,9 @@
                    class="btn-pdf" onclick="event.stopPropagation()">PDF</a>
                 {% else %}
                 <a href="/api/render/{{ entry.date }}/{{ entry.slug }}"
-                   class="btn-pdf" target="_blank"
-                   onclick="event.stopPropagation()">PDF</a>
+                   class="btn-pdf" target="_blank" onclick="event.stopPropagation()">PDF</a>
                 {% endif %}
-                <span id="arrow-{{ entry.slug }}" class="text-gray-300 text-xs transition-transform">&#9654;</span>
+                <span id="arrow-{{ entry.slug }}" class="text-gray-300 text-xs">&#9654;</span>
               </div>
             </div>
 
@@ -115,7 +88,7 @@
 
               <!-- Verification toggle -->
               {% if report.verification_log %}
-              <div class="border-t border-gray-100 px-4 py-2.5 flex items-center gap-3">
+              <div class="border-t border-gray-100 px-4 py-2.5">
                 <button onclick="toggleVerification('{{ entry.slug }}')"
                         class="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2">
                   Verification ({{ report.verification_log | length }} figures)
@@ -154,7 +127,7 @@
                   <li class="text-xs text-gray-500">
                     <a href="{{ b.url }}" class="text-blue-600 hover:underline"
                        target="_blank" rel="noopener noreferrer">{{ b.title }}</a>
-                    <span class="text-gray-300 mx-1">&mdash;</span>{{ b.publisher }}, {{ b.date }}
+                    - {{ b.publisher }}, {{ b.date }}
                   </li>
                   {% endfor %}
                 </ul>
@@ -174,69 +147,8 @@
       </div>
       {% endif %}
 
-      <!-- Deal wrap -->
-      {% if wrap_report %}
-      {% set wr_entry  = wrap_report[0] %}
-      {% set wr_report = reports.get(wr_entry.slug) %}
-      <div>
-        <h3 class="subsection-label">Deal Wrap</h3>
-        <div class="card">
-          <div class="card-header" onclick="toggleCard('{{ wr_entry.slug }}')">
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-700">
-                {{ wr_report.metadata.deal_count if wr_report else "?" }} additional deals
-                <span class="text-gray-400 font-normal ml-1">— {{ wr_entry.date }}</span>
-              </p>
-              <p class="text-xs text-gray-400 mt-0.5">{{ wr_entry.summary }}</p>
-            </div>
-            <span id="arrow-{{ wr_entry.slug }}" class="text-gray-300 text-xs ml-3 shrink-0">&#9654;</span>
-          </div>
-          <div id="body-{{ wr_entry.slug }}" class="hidden border-t border-gray-100">
-            {% if wr_report %}
-            {% set wrap_entries = wr_report.rendered_sections.get("entries", []) %}
-            {% if wrap_entries %}
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs border-collapse">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="wrap-th">Region</th>
-                    <th class="wrap-th">Type</th>
-                    <th class="wrap-th">Parties</th>
-                    <th class="wrap-th">Size</th>
-                    <th class="wrap-th">Key term</th>
-                    <th class="wrap-th">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for e in wrap_entries %}
-                  <tr class="border-t border-gray-100 hover:bg-gray-50">
-                    <td class="px-3 py-2 font-semibold text-[#0f2044]">{{ e.region }}</td>
-                    <td class="px-3 py-2 text-gray-500">{{ e.deal_type }}</td>
-                    <td class="px-3 py-2 text-gray-800 font-medium">{{ e.parties }}</td>
-                    <td class="px-3 py-2 text-gray-800">{{ e.size }}</td>
-                    <td class="px-3 py-2 text-gray-600">{{ e.key_term }}</td>
-                    <td class="px-3 py-2 text-gray-500">{{ e.status }}</td>
-                  </tr>
-                  {% if e.context_line %}
-                  <tr class="bg-white">
-                    <td colspan="6" class="px-3 pb-2 text-[11px] text-gray-400 italic">{{ e.context_line }}</td>
-                  </tr>
-                  {% endif %}
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% else %}
-            <div class="px-4 py-4 text-xs text-gray-400">No deals in wrap.</div>
-            {% endif %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      {% endif %}
-
       <!-- Empty state -->
-      {% if not entries %}
+      {% if not ma_reports %}
       <div class="text-center py-16 text-gray-400">
         <p class="font-medium">No reports for {{ display_date }}.</p>
         <p class="text-sm mt-1">Run <code class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs">python -m app.pipeline --now</code> to generate today's reports.</p>
@@ -244,7 +156,7 @@
       {% endif %}
     </section>
 
-    <!-- ═════════════════════════════════════ ECONOMY & MARKETS ═══ -->
+    <!-- Economy & Markets -->
     <section id="markets">
       <h2 class="section-label">Economy &amp; Markets</h2>
       {% set em = entries | selectattr("report_type", "equalto", "economy_markets") | list %}
@@ -252,7 +164,7 @@
         {# Step 13 #}
       {% else %}
       <div class="card px-4 py-6 text-center text-xs text-gray-400">
-        Economy &amp; Markets report — coming in Step 13.
+        Economy &amp; Markets report - coming in Step 13.
       </div>
       {% endif %}
     </section>

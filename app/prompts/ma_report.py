@@ -39,6 +39,7 @@ FORMAT
 - Currency explicit: A$, US$, £. Prose: A$1.2bn / US$450m.
 - Percentages to 1 decimal place; spreads and rate moves in bps.
 - Dates as 26 Oct 2026; times in Sydney time (AEDT/AEST).
+- Do NOT use em dashes (-- or \u2014). Use a colon or plain hyphen instead.
 """
 
 # ---------------------------------------------------------------------------
