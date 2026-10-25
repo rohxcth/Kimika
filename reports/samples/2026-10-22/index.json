@@ -1,0 +1,101 @@
+[
+  {
+    "slug": "goldstream-resources-a-85m-placement-ecm-au-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "ecm",
+    "region": "AU",
+    "title": "Goldstream Resources: A$85m placement at $3.20",
+    "summary": "Goldstream Resources raises A$85m via institutional placement at A$3.20, a 7.2% discount to last close, to fund the development of the Pilbara copper project.",
+    "deal_value_usd": 55,
+    "updated_at": "2026-10-22T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "united-property-trust-a-150m-placement-ecm-au-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "ecm",
+    "region": "AU",
+    "title": "United Property Trust: A$150m placement at $2.65",
+    "summary": "United Property Trust raises A$150m at A$2.65 per unit, a 5.3% discount to last close, to fund the acquisition of two Sydney logistics assets.",
+    "deal_value_usd": 97,
+    "updated_at": "2026-10-22T07:30:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "nationwide-bank-a-600m-tier2-notes-dcm-au-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "dcm",
+    "region": "AU",
+    "title": "Nationwide Bank: A$600m Tier 2 notes at 3M BBSW +195bps",
+    "summary": "Nationwide Bank prices A$600m of 10NC5 Tier 2 notes at 3M BBSW +195bps, tightening 20bps from IPTs on a 3.5x covered book.",
+    "deal_value_usd": 390,
+    "updated_at": "2026-10-22T08:15:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "crown-energy-plc-gbp-275m-senior-notes-dcm-uk-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "dcm",
+    "region": "UK",
+    "title": "Crown Energy PLC: GBP275m 7-year senior notes at Gilt +145bps",
+    "summary": "Crown Energy PLC prices GBP275m of 7-year senior notes at Gilt +145bps, 15bps inside IPTs, supported by strong demand from UK pension funds.",
+    "deal_value_usd": 345,
+    "updated_at": "2026-10-22T09:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "economy-22-oct-2026-economy-global-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "economy",
+    "region": "global",
+    "title": "Economy: 22 Oct 2026",
+    "summary": "US existing home sales fell for a third consecutive month; AU business conditions eased to +8; IMF revised global growth down 10bps to 3.1% for 2026.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-22T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "equities-22-oct-2026-equities-global-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "equities",
+    "region": "global",
+    "title": "Equities: 22 Oct 2026",
+    "summary": "S&P 500 +0.3% on defensive rotation; ASX 200 -0.1% as commodity prices softened; FTSE 100 +0.2% ahead of UK PMI data.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-22T08:30:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "commodities-22-oct-2026-commodities-global-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "commodities",
+    "region": "global",
+    "title": "Commodities: 22 Oct 2026",
+    "summary": "Gold at US$2,695/oz; WTI rose 0.8% to US$69.40 on Middle East supply risk; iron ore dipped to US$104.80/t on softer Chinese data.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-22T08:45:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "bonds-22-oct-2026-bonds-global-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "bonds",
+    "region": "global",
+    "title": "Bonds: 22 Oct 2026",
+    "summary": "US 10-year at 4.34%; AU 10-year at 4.45%; Bund at 2.31%; IG credit spreads at +86bp, holding near year-to-date tights.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-22T08:50:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "currencies-22-oct-2026-currencies-global-2026-10-22",
+    "date": "2026-10-22",
+    "report_type": "currencies",
+    "region": "global",
+    "title": "Currencies: 22 Oct 2026",
+    "summary": "DXY at 104.0; AUD/USD at 0.6480 supported by stable iron ore; USD/JPY retreated to 151.20 as BoJ officials reiterated vigilance.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-22T09:00:00Z",
+    "has_pdf": false
+  }
+]

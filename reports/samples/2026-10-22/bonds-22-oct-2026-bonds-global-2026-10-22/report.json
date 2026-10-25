@@ -1,0 +1,30 @@
+{
+  "slug": "bonds-22-oct-2026-bonds-global-2026-10-22",
+  "date": "2026-10-22",
+  "report_type": "bonds",
+  "region": "global",
+  "title": "Bonds: 22 Oct 2026",
+  "key_takeaways": [
+    "US 10-year at 4.34%; AU 10-year at 4.45%; Bund at 2.31%; IG credit spreads at +86bp, holding near year-to-date tights.",
+    "Deal terms and structure disclosed in primary announcement.",
+    "Market consensus and outlook detailed in full report."
+  ],
+  "sections": {
+    "1_bonds": "## Overview\n\nUS 10-year at 4.34%; AU 10-year at 4.45%; Bund at 2.31%; IG credit spreads at +86bp, holding near year-to-date tights.\n\nFull analysis available when pipeline runs against primary documents."
+  },
+  "verification_log": [],
+  "bibliography": [
+    {
+      "title": "Sample",
+      "publisher": "Sample",
+      "date": "2026-10-22",
+      "url": "#",
+      "category": "Market data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-22"
+  },
+  "updated_at": "2026-10-22T08:50:00Z"
+}
