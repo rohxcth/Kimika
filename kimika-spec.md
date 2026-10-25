@@ -146,7 +146,7 @@ Readers are IB analysts and finance professionals, so it must look like a sell-s
 | AI | **Google Gemini API (free tier)** via the official `google-genai` Python SDK: Flash-Lite for volume tasks, Flash for full reports; model names in `config.yaml` |
 | Market & company data | **FMP API** + yfinance + FRED / central bank data (cross-checks) |
 | Filings | SEC EDGAR, ASX announcements, UK RNS / Takeover Panel, central bank feeds |
-| PDF | **WeasyPrint** |
+| PDF | **reportlab** (WeasyPrint requires GTK3 system libs not available on Windows without a separate installer) |
 | Storage | Plain files in `reports/YYYY-MM-DD/` (no database) |
 | Tests | pytest, synthetic data, no network |
 
