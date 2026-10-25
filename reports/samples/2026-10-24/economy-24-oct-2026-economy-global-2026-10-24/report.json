@@ -1,0 +1,30 @@
+{
+  "slug": "economy-24-oct-2026-economy-global-2026-10-24",
+  "date": "2026-10-24",
+  "report_type": "economy",
+  "region": "global",
+  "title": "Economy: 24 Oct 2026",
+  "key_takeaways": [
+    "US flash PMI composite at 53.1, above consensus; AU Q3 CPI came in at 3.2% y/y, in line; ECB meet next week with a 25bp cut fully priced.",
+    "Deal terms and structure disclosed in primary announcement.",
+    "Market consensus and outlook detailed in full report."
+  ],
+  "sections": {
+    "1_economy": "## Overview\n\nUS flash PMI composite at 53.1, above consensus; AU Q3 CPI came in at 3.2% y/y, in line; ECB meet next week with a 25bp cut fully priced.\n\nFull analysis available when pipeline runs against primary documents."
+  },
+  "verification_log": [],
+  "bibliography": [
+    {
+      "title": "Sample",
+      "publisher": "Sample",
+      "date": "2026-10-24",
+      "url": "#",
+      "category": "Market data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-24"
+  },
+  "updated_at": "2026-10-24T08:00:00Z"
+}

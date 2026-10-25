@@ -1,0 +1,30 @@
+{
+  "slug": "commodities-25-oct-2026-commodities-global-2026-10-25",
+  "date": "2026-10-25",
+  "report_type": "commodities",
+  "region": "global",
+  "title": "Commodities: 25 Oct 2026",
+  "key_takeaways": [
+    "Gold edged up to US$2,715/oz; iron ore steady at US$106.10/t; oil flat ahead of EIA inventory data.",
+    "Deal terms and structure disclosed in primary announcement.",
+    "Market consensus and outlook detailed in full report."
+  ],
+  "sections": {
+    "1_commodities": "## Overview\n\nGold edged up to US$2,715/oz; iron ore steady at US$106.10/t; oil flat ahead of EIA inventory data.\n\nFull analysis available when pipeline runs against primary documents."
+  },
+  "verification_log": [],
+  "bibliography": [
+    {
+      "title": "Sample",
+      "publisher": "Sample",
+      "date": "2026-10-25",
+      "url": "#",
+      "category": "Market data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-25"
+  },
+  "updated_at": "2026-10-25T08:00:00Z"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "bonds-23-oct-2026-bonds-global-2026-10-23",
+  "date": "2026-10-23",
+  "report_type": "bonds",
+  "region": "global",
+  "title": "Bonds: 23 Oct 2026",
+  "key_takeaways": [
+    "US 10-year at 4.36%; Waller comments pushed back slightly on rate cuts; AU 10-year at 4.47%; German Bund at 2.33%.",
+    "Deal terms and structure disclosed in primary announcement.",
+    "Market consensus and outlook detailed in full report."
+  ],
+  "sections": {
+    "1_bonds": "## Overview\n\nUS 10-year at 4.36%; Waller comments pushed back slightly on rate cuts; AU 10-year at 4.47%; German Bund at 2.33%.\n\nFull analysis available when pipeline runs against primary documents."
+  },
+  "verification_log": [],
+  "bibliography": [
+    {
+      "title": "Sample",
+      "publisher": "Sample",
+      "date": "2026-10-23",
+      "url": "#",
+      "category": "Market data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-23"
+  },
+  "updated_at": "2026-10-23T08:00:00Z"
+}

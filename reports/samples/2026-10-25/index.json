@@ -1,0 +1,90 @@
+[
+  {
+    "slug": "minerco-au-goldfield-resources-mafull-au-2026-10-25",
+    "report_type": "ma_full",
+    "region": "AU",
+    "title": "MinerCo AU / Goldfield Resources: A$1.1bn scheme",
+    "summary": "MinerCo AU makes a firm offer for Goldfield Resources at A$5.80 per share, a 32.1% premium to the undisturbed close of A$4.39.",
+    "deal_value_usd": 720,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "healthnet-inc-careplus-us-380m-merger-mafull-us-2026-10-25",
+    "report_type": "ma_full",
+    "region": "US",
+    "title": "HealthNet Inc / CarePlus: US$380m merger",
+    "summary": "HealthNet Inc acquires CarePlus for US$380m in cash, a 22.5% premium to the 30-day VWAP, subject to HSR clearance.",
+    "deal_value_usd": 380,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "infraco-plc-a-350m-senior-notes-dcm-uk-2026-10-25",
+    "report_type": "dcm",
+    "region": "UK",
+    "title": "InfraCo PLC: GBP350m 5-year senior notes at Gilt +120bps",
+    "summary": "InfraCo PLC prices GBP350m of 5-year senior notes at Gilt +120bps, 10bps inside IPTs on a 2.8x covered book.",
+    "deal_value_usd": 440,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "economy-25-oct-2026-economy-global-2026-10-25",
+    "report_type": "economy",
+    "region": "global",
+    "title": "Economy: 25 Oct 2026",
+    "summary": "Fed officials reinforced the higher-for-longer message; RBA minutes showed a mild tightening bias; ECB third 2026 cut priced for November.",
+    "deal_value_usd": null,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "equities-25-oct-2026-equities-global-2026-10-25",
+    "report_type": "equities",
+    "region": "global",
+    "title": "Equities: 25 Oct 2026",
+    "summary": "S&P 500 flat at 5,807; ASX 200 +0.2% driven by resources; FTSE 100 +0.4% after UK CPI came in softer than expected.",
+    "deal_value_usd": null,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "commodities-25-oct-2026-commodities-global-2026-10-25",
+    "report_type": "commodities",
+    "region": "global",
+    "title": "Commodities: 25 Oct 2026",
+    "summary": "Gold edged up to US$2,715/oz; iron ore steady at US$106.10/t; oil flat ahead of EIA inventory data.",
+    "deal_value_usd": null,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "bonds-25-oct-2026-bonds-global-2026-10-25",
+    "report_type": "bonds",
+    "region": "global",
+    "title": "Bonds: 25 Oct 2026",
+    "summary": "US 10-year at 4.40%, up 2bp after strong jobless claims; AU 10-year at 4.53%; UK Gilt curve steepened on soft CPI.",
+    "deal_value_usd": null,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "currencies-25-oct-2026-currencies-global-2026-10-25",
+    "report_type": "currencies",
+    "region": "global",
+    "title": "Currencies: 25 Oct 2026",
+    "summary": "DXY at 104.3; AUD/USD at 0.6465 on risk-off tone; GBP/USD rose to 1.2940 after softer UK CPI reduced BoE cut expectations.",
+    "deal_value_usd": null,
+    "date": "2026-10-25",
+    "updated_at": "2026-10-25T08:00:00Z",
+    "has_pdf": false
+  }
+]

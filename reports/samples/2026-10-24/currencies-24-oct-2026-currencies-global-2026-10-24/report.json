@@ -1,0 +1,30 @@
+{
+  "slug": "currencies-24-oct-2026-currencies-global-2026-10-24",
+  "date": "2026-10-24",
+  "report_type": "currencies",
+  "region": "global",
+  "title": "Currencies: 24 Oct 2026",
+  "key_takeaways": [
+    "AUD/USD fell 0.4% to 0.6458 after Q3 CPI showed persistent services inflation; USD/JPY at 151.90; EUR/USD steady at 1.0800.",
+    "Deal terms and structure disclosed in primary announcement.",
+    "Market consensus and outlook detailed in full report."
+  ],
+  "sections": {
+    "1_currencies": "## Overview\n\nAUD/USD fell 0.4% to 0.6458 after Q3 CPI showed persistent services inflation; USD/JPY at 151.90; EUR/USD steady at 1.0800.\n\nFull analysis available when pipeline runs against primary documents."
+  },
+  "verification_log": [],
+  "bibliography": [
+    {
+      "title": "Sample",
+      "publisher": "Sample",
+      "date": "2026-10-24",
+      "url": "#",
+      "category": "Market data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-24"
+  },
+  "updated_at": "2026-10-24T08:00:00Z"
+}

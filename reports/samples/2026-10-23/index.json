@@ -1,0 +1,101 @@
+[
+  {
+    "slug": "pacific-logistics-tradeflow-au-mafull-au-2026-10-23",
+    "report_type": "ma_full",
+    "region": "AU",
+    "title": "Pacific Logistics / TradeFlow AU: A$640m scheme",
+    "summary": "Pacific Logistics proposes a scheme to acquire TradeFlow AU at A$2.95 per share, a 29.8% premium to the undisturbed price of A$2.27.",
+    "deal_value_usd": 415,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "nexgen-pharma-us-biocore-labs-mafull-us-2026-10-23",
+    "report_type": "ma_full",
+    "region": "US",
+    "title": "NexGen Pharma / BioCore Labs: US$1.2bn acquisition",
+    "summary": "NexGen Pharma acquires BioCore Labs for US$1.2bn in a mix of cash and stock, at a 35.4% premium to the 60-day VWAP.",
+    "deal_value_usd": 1200,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "silvergate-bank-a-200m-tier1-hybrid-dcm-au-2026-10-23",
+    "report_type": "dcm",
+    "region": "AU",
+    "title": "Silvergate Bank: A$200m AT1 capital notes at 3M BBSW +310bps",
+    "summary": "Silvergate Bank prices A$200m of Additional Tier 1 capital notes at 3M BBSW +310bps, 20bps inside IPTs on a 4.1x covered book.",
+    "deal_value_usd": 130,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "redwood-energy-a-55m-placement-ecm-au-2026-10-23",
+    "report_type": "ecm",
+    "region": "AU",
+    "title": "Redwood Energy: A$55m placement at $1.42",
+    "summary": "Redwood Energy raises A$55m via placement at A$1.42, an 8.4% discount to last close, to fund Phase 2 development of the Carnarvon gas field.",
+    "deal_value_usd": 36,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "economy-23-oct-2026-economy-global-2026-10-23",
+    "report_type": "economy",
+    "region": "global",
+    "title": "Economy: 23 Oct 2026",
+    "summary": "Fed's Waller cautioned against premature easing; RBA Governor Bullock reiterated patience; UK retail sales beat at +0.5% m/m.",
+    "deal_value_usd": null,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "equities-23-oct-2026-equities-global-2026-10-23",
+    "report_type": "equities",
+    "region": "global",
+    "title": "Equities: 23 Oct 2026",
+    "summary": "S&P 500 -0.2% on profit-taking ahead of earnings; ASX 200 +0.5% led by healthcare; Nikkei 225 -0.6% as yen strengthened.",
+    "deal_value_usd": null,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "commodities-23-oct-2026-commodities-global-2026-10-23",
+    "report_type": "commodities",
+    "region": "global",
+    "title": "Commodities: 23 Oct 2026",
+    "summary": "Gold at US$2,700/oz; WTI at US$68.80 on OPEC output concerns; iron ore at US$105.50/t ahead of Chinese property data.",
+    "deal_value_usd": null,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "bonds-23-oct-2026-bonds-global-2026-10-23",
+    "report_type": "bonds",
+    "region": "global",
+    "title": "Bonds: 23 Oct 2026",
+    "summary": "US 10-year at 4.36%; Waller comments pushed back slightly on rate cuts; AU 10-year at 4.47%; German Bund at 2.33%.",
+    "deal_value_usd": null,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "currencies-23-oct-2026-currencies-global-2026-10-23",
+    "report_type": "currencies",
+    "region": "global",
+    "title": "Currencies: 23 Oct 2026",
+    "summary": "JPY strengthened as USD/JPY fell to 151.50 on BoJ intervention speculation; AUD/USD at 0.6472; DXY at 104.1.",
+    "deal_value_usd": null,
+    "date": "2026-10-23",
+    "updated_at": "2026-10-23T08:00:00Z",
+    "has_pdf": false
+  }
+]

@@ -1,0 +1,90 @@
+[
+  {
+    "slug": "continental-steel-apex-metals-mafull-au-2026-10-24",
+    "report_type": "ma_full",
+    "region": "AU",
+    "title": "Continental Steel / Apex Metals: A$870m takeover bid",
+    "summary": "Continental Steel lodges an off-market takeover bid for Apex Metals at A$3.20 per share cash, a 27.0% premium to the undisturbed close.",
+    "deal_value_usd": 565,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "techvision-group-a-120m-placement-ecm-au-2026-10-24",
+    "report_type": "ecm",
+    "region": "AU",
+    "title": "TechVision Group: A$120m placement at $4.85",
+    "summary": "TechVision Group raises A$120m via fully underwritten institutional placement at A$4.85, a 6.3% discount to last close, to fund the acquisition of DataStream Pty Ltd.",
+    "deal_value_usd": 78,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "axiom-corp-brightfield-uk-780m-scheme-mafull-uk-2026-10-24",
+    "report_type": "ma_full",
+    "region": "UK",
+    "title": "Axiom Corp / Brightfield UK: GBP780m scheme",
+    "summary": "Axiom Corp announces a firm offer for Brightfield UK at 440p per share, a 24.6% premium to the undisturbed close of 353p.",
+    "deal_value_usd": 980,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "economy-24-oct-2026-economy-global-2026-10-24",
+    "report_type": "economy",
+    "region": "global",
+    "title": "Economy: 24 Oct 2026",
+    "summary": "US flash PMI composite at 53.1, above consensus; AU Q3 CPI came in at 3.2% y/y, in line; ECB meet next week with a 25bp cut fully priced.",
+    "deal_value_usd": null,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "equities-24-oct-2026-equities-global-2026-10-24",
+    "report_type": "equities",
+    "region": "global",
+    "title": "Equities: 24 Oct 2026",
+    "summary": "S&P 500 +0.4% ahead of mega-cap earnings; ASX 200 dipped 0.3% after Q3 CPI showed inflation above target; Hang Seng +1.1% on stimulus optimism.",
+    "deal_value_usd": null,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "commodities-24-oct-2026-commodities-global-2026-10-24",
+    "report_type": "commodities",
+    "region": "global",
+    "title": "Commodities: 24 Oct 2026",
+    "summary": "WTI crude at US$69.20/bbl; copper rose 1.4% on PMI beat; gold at US$2,708/oz ahead of Fed speakers.",
+    "deal_value_usd": null,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "bonds-24-oct-2026-bonds-global-2026-10-24",
+    "report_type": "bonds",
+    "region": "global",
+    "title": "Bonds: 24 Oct 2026",
+    "summary": "US 10-year at 4.38%; AU 10-year sold off 4bp to 4.51% after Q3 CPI; IG spreads tightened to +83bp, near 2026 tights.",
+    "deal_value_usd": null,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "currencies-24-oct-2026-currencies-global-2026-10-24",
+    "report_type": "currencies",
+    "region": "global",
+    "title": "Currencies: 24 Oct 2026",
+    "summary": "AUD/USD fell 0.4% to 0.6458 after Q3 CPI showed persistent services inflation; USD/JPY at 151.90; EUR/USD steady at 1.0800.",
+    "deal_value_usd": null,
+    "date": "2026-10-24",
+    "updated_at": "2026-10-24T08:00:00Z",
+    "has_pdf": false
+  }
+]

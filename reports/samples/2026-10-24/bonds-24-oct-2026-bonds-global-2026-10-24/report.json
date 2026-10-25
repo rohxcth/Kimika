@@ -1,0 +1,30 @@
+{
+  "slug": "bonds-24-oct-2026-bonds-global-2026-10-24",
+  "date": "2026-10-24",
+  "report_type": "bonds",
+  "region": "global",
+  "title": "Bonds: 24 Oct 2026",
+  "key_takeaways": [
+    "US 10-year at 4.38%; AU 10-year sold off 4bp to 4.51% after Q3 CPI; IG spreads tightened to +83bp, near 2026 tights.",
+    "Deal terms and structure disclosed in primary announcement.",
+    "Market consensus and outlook detailed in full report."
+  ],
+  "sections": {
+    "1_bonds": "## Overview\n\nUS 10-year at 4.38%; AU 10-year sold off 4bp to 4.51% after Q3 CPI; IG spreads tightened to +83bp, near 2026 tights.\n\nFull analysis available when pipeline runs against primary documents."
+  },
+  "verification_log": [],
+  "bibliography": [
+    {
+      "title": "Sample",
+      "publisher": "Sample",
+      "date": "2026-10-24",
+      "url": "#",
+      "category": "Market data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-24"
+  },
+  "updated_at": "2026-10-24T08:00:00Z"
+}
