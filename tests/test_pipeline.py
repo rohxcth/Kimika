@@ -16,6 +16,7 @@ import pytest
 from app.pipeline import (
     _bucket_deals,
     _rank_deals,
+    _write_market_reports,
     run,
 )
 from app.report import (
@@ -378,3 +379,83 @@ def test_pipeline_run_fetch_failure_continues(tmp_path, monkeypatch):
 
     # Should still produce a report (with empty primary_doc)
     assert summary["full_reports"] == 1
+
+
+# ---------------------------------------------------------------------------
+# _write_market_reports
+# ---------------------------------------------------------------------------
+
+def _stub_market(report_type: str) -> "ReportData":
+    from app.report import ReportData
+    from datetime import datetime
+    return ReportData(
+        slug=f"{report_type}-{DATE_STR}",
+        date=DATE_STR,
+        report_type=report_type,
+        region="global",
+        title=f"{report_type.title()}: {DATE_STR}",
+        key_takeaways=["A", "B", "C"],
+        sections={f"1_{report_type}": "content"},
+        bibliography=[],
+        verification_log=[],
+        metadata={},
+        updated_at=datetime.utcnow(),
+    )
+
+
+def test_write_market_reports_returns_five(tmp_path):
+    """_write_market_reports should return one report per market column."""
+    import app.llm as llm_mod
+    import app.pipeline as pipe_mod
+
+    stubs = {
+        "economy":     _stub_market("economy"),
+        "equities":    _stub_market("equities"),
+        "commodities": _stub_market("commodities"),
+        "bonds":       _stub_market("bonds"),
+        "currencies":  _stub_market("currencies"),
+    }
+
+    with (
+        patch("app.pipeline.discover_economy_context", return_value="eco ctx"),
+        patch("app.pipeline.discover_markets_context", return_value={
+            "equities": "eq ctx", "commodities": "com ctx",
+            "bonds": "bon ctx", "currencies": "fx ctx",
+        }),
+        patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  return_value=stubs["currencies"]),
+    ):
+        reports = _write_market_reports(DATE_STR)
+
+    assert len(reports) == 5
+    report_types = {r.report_type for r in reports}
+    assert report_types == {"economy", "equities", "commodities", "bonds", "currencies"}
+
+
+def test_write_market_reports_skips_failed_writer(tmp_path):
+    """If one writer fails, the others still succeed."""
+    stubs = {
+        "economy":     _stub_market("economy"),
+        "equities":    _stub_market("equities"),
+        "commodities": _stub_market("commodities"),
+        "bonds":       _stub_market("bonds"),
+    }
+
+    with (
+        patch("app.pipeline.discover_economy_context", return_value=""),
+        patch("app.pipeline.discover_markets_context", return_value={
+            "equities": "", "commodities": "", "bonds": "", "currencies": "",
+        }),
+        patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  side_effect=Exception("FX error")),
+    ):
+        reports = _write_market_reports(DATE_STR)
+
+    assert len(reports) == 4
+    assert all(r.report_type != "currencies" for r in reports)

@@ -48,8 +48,8 @@ Closest template, adapted: LBO (sponsor, leverage, debt package, equity cheque),
 
 ---
 
-# Economy & Markets report (one per day, 2–4 pages)
-One PDF, five sections in this order: **Economy → Equities → Commodities → Debt → Currencies**. Opens with 3 key takeaways across all sections.
+# Daily market column reports (five separate reports per day)
+Five standalone reports, one per column: **Economy · Equities · Commodities · Bonds · Currencies**. Each is its own expandable card on the page (identical style to deal cards), with its own slug, report_type, 3 key takeaways, body section, and bibliography. report_types: `economy`, `equities`, `commodities`, `bonds`, `currencies`. Generated together by `_write_market_reports()` in pipeline.py.
 
 ## Economy: macroeconomic and policy analysis
 Order: **United States, Australia** (rates first), then other regions if significant.

@@ -24,6 +24,7 @@ from app.sources import (
     discover_edgar,
     discover_rns,
     discover_economy_context,
+    discover_markets_context,
 )
 
 TARGET_DATE = date(2026, 10, 26)
@@ -491,3 +492,31 @@ def test_economy_context_all_failures_returns_empty_string():
     with patch("app.sources.fetch", side_effect=Exception("all down")):
         result = discover_economy_context(TARGET_DATE)
     assert result == ""
+
+
+# ---------------------------------------------------------------------------
+# discover_markets_context
+# ---------------------------------------------------------------------------
+
+def test_markets_context_returns_four_keys():
+    """discover_markets_context always returns a dict with the four section keys."""
+    with patch("app.sources._fetch_yfinance_tickers", return_value="mock data"):
+        result = discover_markets_context(TARGET_DATE)
+    assert set(result.keys()) == {"equities", "commodities", "bonds", "currencies"}
+
+
+def test_markets_context_keys_are_strings():
+    """Each value in the returned dict is a string (may be empty on failure)."""
+    with patch("app.sources._fetch_yfinance_tickers", return_value=""):
+        result = discover_markets_context(TARGET_DATE)
+    for key, val in result.items():
+        assert isinstance(val, str), f"{key} value should be str"
+
+
+def test_markets_context_yfinance_no_data_returns_empty_strings():
+    """If yfinance returns empty strings for all tickers, all four values are empty strings."""
+    with patch("app.sources._fetch_yfinance_tickers", return_value=""):
+        result = discover_markets_context(TARGET_DATE)
+    assert set(result.keys()) == {"equities", "commodities", "bonds", "currencies"}
+    for val in result.values():
+        assert isinstance(val, str)

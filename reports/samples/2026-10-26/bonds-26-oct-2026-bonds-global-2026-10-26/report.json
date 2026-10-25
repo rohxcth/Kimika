@@ -1,0 +1,49 @@
+{
+  "slug": "bonds-26-oct-2026-bonds-global-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "bonds",
+  "region": "global",
+  "title": "Bonds: 26 Oct 2026",
+  "key_takeaways": [
+    "US 10-year Treasuries at 4.38%, stable; the 2s10s curve is -12bp inverted - less inverted than the -42bp peak but still below zero.",
+    "AU 10-year ACGBs at 4.55%, 17bp above US Treasuries; market pricing implies a first RBA cut in Q2 2027.",
+    "IG credit spreads tight at +85bp over Treasuries; HY at +310bp, near the tightest levels of 2026."
+  ],
+  "sections": {
+    "1_bonds": "## Government bond yields\n\n| Market | 2Y | 10Y | 30Y | 10Y move |\n|---|---|---|---|---|\n| US Treasury | 4.50% | 4.38% | 4.55% | flat |\n| AU ACGB | 4.20% | 4.55% | 4.72% | +2bp |\n| UK Gilt | 4.15% | 4.28% | 4.68% | +1bp |\n| German Bund | 2.18% | 2.35% | 2.65% | flat |\n| Japan JGB | 0.35% | 1.05% | 2.10% | +3bp |\n\n## United States\n\nUS 10-year Treasuries held at 4.38%, finding stability after last week's 12bp selloff on the back of a strong jobs report. The 2s10s spread is -12bp: still inverted but significantly less so than the -42bp trough in mid-2024. Fed funds futures price an 82% probability of no change at the November 2026 meeting. The 30-year is at 4.55%, a 17bp term premium above the 10-year, reflecting supply concerns (US fiscal deficit above 6% of GDP) and reduced foreign central bank buying.\n\nReal yields (TIPS): US 10-year TIPS at +1.85%, near cycle highs. At this level, gold's hold above US$2,700 is notable - it suggests non-rate-sensitive demand (central bank buying, geopolitical) is offsetting the yield drag.\n\n## Australia\n\nAU 10-year ACGBs nudged 2bp higher to 4.55% in line with the global tone. The spread to US Treasuries is +17bp, historically tight - reflecting the market's view that the RBA will cut later and less than the Fed. The Australian OIS curve prices 48bp of cuts by December 2027, implying approximately two 25bp moves.\n\nAFMA rate futures show the first fully-priced cut in May 2027. AOFM issuance of A$1.2bn in 10-year ACGBs this week was well absorbed at a 3.1x bid-to-cover ratio, consistent with solid demand at current yield levels.\n\n## Credit and spreads\n\nUS investment grade (CDX IG index): 85bp, near the tightest level of 2026 (82bp in September). High yield (CDX HY): 310bp. The compression reflects strong corporate earnings (Q3 S&P 500 beat rate above 75%) and contained recession risk in the consensus view. The main credit risk is refinancing wall: a significant volume of high yield maturities falls due in 2027-2028, which will test the market if base rates stay elevated.\n\n## Outlook\n\nConsensus is for US 10-year yields to drift lower toward 4.0-4.2% over 12 months as the Fed begins cutting - consistent with 50bp of easing. Duration is broadly favoured at current levels. Key near-term risk: Friday's core PCE print. A surprise above 0.3% month-on-month would reprice the near-term Fed path and push yields higher. AU bonds are expected to broadly follow the US direction but with less easing priced given the RBA's later start."
+  },
+  "verification_log": [
+    {
+      "figure": "US 10-year yield (4.38%)",
+      "value": "4.38%",
+      "status": "\u2753 Single source",
+      "sources": ["yfinance sample data"],
+      "note": "Sample data."
+    },
+    {
+      "figure": "AU 10-year yield (4.55%)",
+      "value": "4.55%",
+      "status": "\u2753 Single source",
+      "sources": ["Sample data"],
+      "note": "Sample data."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "US Treasury Yield Curve",
+      "publisher": "U.S. Department of the Treasury",
+      "date": "2026-10-26",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/",
+      "category": "Central banks & official data"
+    },
+    {
+      "title": "RBA Statistical Table F2 - Capital Market Yields",
+      "publisher": "Reserve Bank of Australia",
+      "date": "2026-10-26",
+      "url": "https://www.rba.gov.au/statistics/tables/",
+      "category": "Central banks & official data"
+    }
+  ],
+  "metadata": { "region": "global", "report_date": "2026-10-26" },
+  "updated_at": "2026-10-26T08:50:00Z"
+}

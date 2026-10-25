@@ -1,0 +1,42 @@
+{
+  "slug": "commodities-26-oct-2026-commodities-global-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "commodities",
+  "region": "global",
+  "title": "Commodities: 26 Oct 2026",
+  "key_takeaways": [
+    "Gold held above US$2,720/oz, supported by geopolitical risk and central bank buying despite firmer real yields.",
+    "WTI crude fell 1.2% to US$68.40/bbl after a larger-than-expected US inventory build; Brent followed to US$72.15.",
+    "Iron ore at US$106.50/t, holding on resilient Chinese steel output; copper steady at US$4.42/lb."
+  ],
+  "sections": {
+    "1_commodities": "## Levels and moves\n\n| Commodity | Price | Unit | 1-day change |\n|---|---|---|---|\n| Gold | 2,722 | USD/oz | +0.3% |\n| Silver | 32.15 | USD/oz | +0.5% |\n| WTI Crude | 68.40 | USD/bbl | -1.2% |\n| Brent Crude | 72.15 | USD/bbl | -1.1% |\n| Copper | 4.42 | USD/lb | -0.2% |\n| Iron Ore (62% Fe) | 106.50 | USD/t | +0.4% |\n\n## Energy\n\nWTI fell 1.2% to US$68.40 after the EIA reported a 3.2 million barrel inventory build for the week ending 24 October, well above the 1.2 million barrel consensus. OPEC+ production discipline remains in focus after reports of above-quota production from two member states. The demand outlook is mixed: US refinery runs are seasonally low post-summer, and Chinese crude imports in September disappointed at 10.9mb/d (down from 11.3mb/d in August). Brent trades at a US$3.75 premium to WTI, at the wider end of its recent range, reflecting logistics and geopolitical factors.\n\n## Metals\n\n**Gold:** Held above US$2,720/oz despite stable real yields (US 10-year TIPS at +1.85%), supported by persistent central bank demand and geopolitical risk premiums. The consensus remains constructive on gold into 2027 given anticipated Fed easing and continued reserve diversification by emerging market central banks.\n\n**Copper:** Marginally weaker at US$4.42/lb, consolidating after last week's 2.1% rally. LME inventory data showed a modest build. Copper continues to be read as a macro indicator: stable price signals neither a sharp China slowdown nor a significant reacceleration.\n\n**Iron ore:** US$106.50/t, supported by Chinese blast furnace utilisation rates holding near 82%, above the seasonal average. The risk is a policy-driven steel production cut in China ahead of winter; the base case is stable demand through Q4.\n\n## Outlook\n\nEnergy: rangebound in the near term (WTI US$65-72) absent a material OPEC+ policy change or significant demand shock. Gold: consensus is modestly bullish through 2027 as the Fed begins cutting; the key risk is a re-acceleration of inflation keeping real yields elevated. Iron ore: the market is watching for Chinese property stimulus conversion into actual construction activity."
+  },
+  "verification_log": [
+    {
+      "figure": "Gold (US$2,722/oz)",
+      "value": "2,722",
+      "status": "\u2753 Single source",
+      "sources": ["yfinance sample data"],
+      "note": "Sample data."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "Commodity Futures Data",
+      "publisher": "yfinance / Yahoo Finance",
+      "date": "2026-10-26",
+      "url": "https://finance.yahoo.com/commodities/",
+      "category": "Market data"
+    },
+    {
+      "title": "Weekly Petroleum Status Report",
+      "publisher": "U.S. Energy Information Administration",
+      "date": "2026-10-26",
+      "url": "https://www.eia.gov/petroleum/supply/weekly/",
+      "category": "Central banks & official data"
+    }
+  ],
+  "metadata": { "region": "global", "report_date": "2026-10-26" },
+  "updated_at": "2026-10-26T08:45:00Z"
+}

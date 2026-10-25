@@ -175,7 +175,7 @@
     {# ------------------------------------------------------------------ #}
     {# Economy column #}
     {# ------------------------------------------------------------------ #}
-    {% set econ_entries = entries | selectattr("report_type", "equalto", "economy_markets") | list %}
+    {% set econ_entries = entries | selectattr("report_type", "equalto", "economy") | list %}
     <div class="col">
       <div class="col-header">
         <span class="col-label">Economy</span>
@@ -184,13 +184,10 @@
       <div class="col-body">
         {% if econ_entries %}
           {% for entry in econ_entries %}
-          <div class="rcard">
-            <h3 class="rcard-title">{{ entry.title }}</h3>
-            <p class="rcard-summary">{{ entry.summary }}</p>
-          </div>
+          {{ report_card(entry, reports.get(entry.slug)) }}
           {% endfor %}
         {% else %}
-          <div class="col-empty">Coming in Step 13.</div>
+          <div class="col-empty">No economy reports yet.</div>
         {% endif %}
       </div>
     </div>
@@ -198,48 +195,80 @@
     {# ------------------------------------------------------------------ #}
     {# Equities column #}
     {# ------------------------------------------------------------------ #}
+    {% set eq_entries = entries | selectattr("report_type", "equalto", "equities") | list %}
     <div class="col">
       <div class="col-header">
         <span class="col-label">Equities</span>
+        {% if eq_entries %}<span class="col-count">{{ eq_entries | length }}</span>{% endif %}
       </div>
       <div class="col-body">
-        <div class="col-empty">Coming in Step 13.</div>
+        {% if eq_entries %}
+          {% for entry in eq_entries %}
+          {{ report_card(entry, reports.get(entry.slug)) }}
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">No equities reports yet.</div>
+        {% endif %}
       </div>
     </div>
 
     {# ------------------------------------------------------------------ #}
     {# Commodities column #}
     {# ------------------------------------------------------------------ #}
+    {% set com_entries = entries | selectattr("report_type", "equalto", "commodities") | list %}
     <div class="col">
       <div class="col-header">
         <span class="col-label">Commodities</span>
+        {% if com_entries %}<span class="col-count">{{ com_entries | length }}</span>{% endif %}
       </div>
       <div class="col-body">
-        <div class="col-empty">Coming in Step 13.</div>
+        {% if com_entries %}
+          {% for entry in com_entries %}
+          {{ report_card(entry, reports.get(entry.slug)) }}
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">No commodities reports yet.</div>
+        {% endif %}
       </div>
     </div>
 
     {# ------------------------------------------------------------------ #}
     {# Bonds column #}
     {# ------------------------------------------------------------------ #}
+    {% set bond_entries = entries | selectattr("report_type", "equalto", "bonds") | list %}
     <div class="col">
       <div class="col-header">
         <span class="col-label">Bonds</span>
+        {% if bond_entries %}<span class="col-count">{{ bond_entries | length }}</span>{% endif %}
       </div>
       <div class="col-body">
-        <div class="col-empty">Coming in Step 13.</div>
+        {% if bond_entries %}
+          {% for entry in bond_entries %}
+          {{ report_card(entry, reports.get(entry.slug)) }}
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">No bonds reports yet.</div>
+        {% endif %}
       </div>
     </div>
 
     {# ------------------------------------------------------------------ #}
     {# Currencies column #}
     {# ------------------------------------------------------------------ #}
+    {% set fx_entries = entries | selectattr("report_type", "equalto", "currencies") | list %}
     <div class="col">
       <div class="col-header">
         <span class="col-label">Currencies</span>
+        {% if fx_entries %}<span class="col-count">{{ fx_entries | length }}</span>{% endif %}
       </div>
       <div class="col-body">
-        <div class="col-empty">Coming in Step 13.</div>
+        {% if fx_entries %}
+          {% for entry in fx_entries %}
+          {{ report_card(entry, reports.get(entry.slug)) }}
+          {% endfor %}
+        {% else %}
+          <div class="col-empty">No currencies reports yet.</div>
+        {% endif %}
       </div>
     </div>
 

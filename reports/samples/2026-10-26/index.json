@@ -55,14 +55,58 @@
     "has_pdf": false
   },
   {
-    "slug": "economy-markets-2026-10-26-economymarkets-global-2026-10-26",
+    "slug": "economy-26-oct-2026-economy-global-2026-10-26",
     "date": "2026-10-26",
-    "report_type": "economy_markets",
+    "report_type": "economy",
     "region": "global",
-    "title": "Economy & Markets: 26 Oct 2026",
-    "summary": "The Fed held at 5.25-5.50%; the RBA held at 4.35% with a mild tightening bias; markets price first cuts in 2027 for both central banks.",
+    "title": "Economy: 26 Oct 2026",
+    "summary": "The Fed held at 5.25-5.50%; the RBA held at 4.35% with a mild tightening bias; markets price first cuts in 2027 for both.",
     "deal_value_usd": null,
     "updated_at": "2026-10-26T08:00:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "equities-26-oct-2026-equities-global-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "equities",
+    "region": "global",
+    "title": "Equities: 26 Oct 2026",
+    "summary": "S&P 500 +0.6% on Microsoft and Alphabet earnings beats; ASX 200 +0.4%; FTSE 100 lagged at -0.2%.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-26T08:30:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "commodities-26-oct-2026-commodities-global-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "commodities",
+    "region": "global",
+    "title": "Commodities: 26 Oct 2026",
+    "summary": "Gold holds above US$2,720/oz; WTI fell 1.2% to US$68.40 on inventory build; iron ore at US$106.50/t.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-26T08:45:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "bonds-26-oct-2026-bonds-global-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "bonds",
+    "region": "global",
+    "title": "Bonds: 26 Oct 2026",
+    "summary": "US 10-year at 4.38%; AU 10-year at 4.55%; IG credit at +85bp near 2026 tights.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-26T08:50:00Z",
+    "has_pdf": false
+  },
+  {
+    "slug": "currencies-26-oct-2026-currencies-global-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "currencies",
+    "region": "global",
+    "title": "Currencies: 26 Oct 2026",
+    "summary": "DXY at 104.2 (-0.1%); AUD/USD at 0.6482 on risk-on; USD/JPY at 152.30 approaching watched levels.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-26T09:00:00Z",
     "has_pdf": false
   }
 ]

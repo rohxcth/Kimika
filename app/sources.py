@@ -308,6 +308,37 @@ _FRED_SERIES = {
     "GS10": "US 10-Year Treasury Constant Maturity Rate",
 }
 
+# yfinance tickers for market data
+_EQUITY_TICKERS = {
+    "^GSPC": "S&P 500",
+    "^AXJO": "ASX 200",
+    "^FTSE": "FTSE 100",
+    "^N225": "Nikkei 225",
+    "^HSI": "Hang Seng",
+    "^NDX": "Nasdaq 100",
+}
+_COMMODITY_TICKERS = {
+    "GC=F": "Gold (USD/oz)",
+    "CL=F": "WTI Crude (USD/bbl)",
+    "BZ=F": "Brent Crude (USD/bbl)",
+    "HG=F": "Copper (USD/lb)",
+    "SI=F": "Silver (USD/oz)",
+}
+_BOND_TICKERS = {
+    "^TNX": "US 10-Year Treasury Yield (%)",
+    "^TYX": "US 30-Year Treasury Yield (%)",
+    "^FVX": "US 5-Year Treasury Yield (%)",
+    "^IRX": "US 3-Month T-Bill Yield (%)",
+}
+_FX_TICKERS = {
+    "AUDUSD=X": "AUD/USD",
+    "EURUSD=X": "EUR/USD",
+    "GBPUSD=X": "GBP/USD",
+    "USDJPY=X": "USD/JPY",
+    "USDCNH=X": "USD/CNH",
+    "DX-Y.NYB": "US Dollar Index (DXY)",
+}
+
 
 def discover_economy_context(target_date: date) -> str:
     """Fetch macro context for the Economy & Markets report.
@@ -367,6 +398,126 @@ def discover_economy_context(target_date: date) -> str:
 
     combined = "\n\n".join(segments)
     return combined[:trim]
+
+
+# ---------------------------------------------------------------------------
+# Market data context discovery (yfinance + FMP)
+# ---------------------------------------------------------------------------
+
+def _fetch_yfinance_tickers(tickers: dict[str, str]) -> str:
+    """Fetch latest price + 1-day change for a dict of {ticker: label}.
+
+    Uses yfinance. Returns a formatted string; empty string if yfinance
+    is not installed or all fetches fail.
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        logger.info("yfinance not installed - skipping yfinance market data")
+        return ""
+
+    rows: list[str] = []
+    for ticker, label in tickers.items():
+        try:
+            hist = yf.Ticker(ticker).history(period="5d")
+            if hist.empty:
+                continue
+            last = hist["Close"].iloc[-1]
+            prev = hist["Close"].iloc[-2] if len(hist) >= 2 else last
+            change = last - prev
+            pct = (change / prev * 100) if prev else 0
+            rows.append(f"{label}: {last:.4g} ({pct:+.2f}%)")
+        except Exception as exc:
+            logger.debug("yfinance %s failed: %s", ticker, exc)
+    return "\n".join(rows)
+
+
+def discover_markets_context(target_date: date) -> dict[str, str]:
+    """Fetch market data context for each of the 4 market columns.
+
+    Returns a dict: {"equities": str, "commodities": str, "bonds": str, "currencies": str}
+
+    Each value is a compact string of price levels and moves suitable for
+    passing to the LLM as context. Empty strings degrade gracefully.
+    Sources: yfinance (no key, always attempted) + FMP (if FMP_API_KEY set).
+    """
+    import os
+    fmp_key = os.environ.get("FMP_API_KEY", "")
+    trim = cfg["pipeline"]["doc_trim_chars"]
+
+    def _fmp_quote(symbols: list[str]) -> str:
+        """Fetch FMP quotes for a list of symbols; return formatted string."""
+        if not fmp_key or not symbols:
+            return ""
+        sym_str = ",".join(symbols)
+        try:
+            data = fetch_json(
+                f"{cfg['fmp']['base_url']}/quote/{sym_str}?apikey={fmp_key}"
+            )
+            if not isinstance(data, list):
+                return ""
+            rows = [
+                f"{q.get('name', q.get('symbol', ''))}: "
+                f"{q.get('price', 'N/A')} "
+                f"({q.get('changesPercentage', 0):+.2f}%)"
+                for q in data if q.get("price") is not None
+            ]
+            return "\n".join(rows)
+        except Exception as exc:
+            logger.debug("FMP quote failed for %s: %s", sym_str, exc)
+            return ""
+
+    # Equities
+    equities_yf = _fetch_yfinance_tickers(_EQUITY_TICKERS)
+    equities_fmp = _fmp_quote(["SPY", "QQQ", "IWM"])
+    equities = "\n\n".join(filter(None, [
+        "=== Equity Indices (yfinance) ===\n" + equities_yf if equities_yf else "",
+        "=== Equity ETFs (FMP cross-check) ===\n" + equities_fmp if equities_fmp else "",
+    ]))
+
+    # Commodities
+    commod_yf = _fetch_yfinance_tickers(_COMMODITY_TICKERS)
+    commod_fmp = _fmp_quote(["GCUSD", "CLUSD"])
+    commodities = "\n\n".join(filter(None, [
+        "=== Commodity Futures (yfinance) ===\n" + commod_yf if commod_yf else "",
+        "=== Commodity FMP cross-check ===\n" + commod_fmp if commod_fmp else "",
+    ]))
+
+    # Bonds
+    bonds_yf = _fetch_yfinance_tickers(_BOND_TICKERS)
+    # FRED for AU 10y if key available
+    fred_key = os.environ.get("FRED_API_KEY", "")
+    au_yield = ""
+    if fred_key:
+        try:
+            data = fetch_json(
+                f"{_FRED_SERIES_URL}?series_id=IRLTLT01AUM156N"
+                f"&api_key={fred_key}&sort_order=desc&limit=2&file_type=json"
+            )
+            obs = data.get("observations", [])
+            if obs:
+                au_yield = f"AU 10-Year Govt Bond Yield: {obs[0]['value']}% ({obs[0]['date']})"
+        except Exception as exc:
+            logger.debug("FRED AU yield failed: %s", exc)
+    bonds = "\n\n".join(filter(None, [
+        "=== US Treasury Yields (yfinance) ===\n" + bonds_yf if bonds_yf else "",
+        "=== AU 10Y Yield (FRED) ===\n" + au_yield if au_yield else "",
+    ]))
+
+    # Currencies
+    fx_yf = _fetch_yfinance_tickers(_FX_TICKERS)
+    fx_fmp = _fmp_quote(["AUDUSD", "EURUSD", "GBPUSD"])
+    currencies = "\n\n".join(filter(None, [
+        "=== FX Rates (yfinance) ===\n" + fx_yf if fx_yf else "",
+        "=== FX FMP cross-check ===\n" + fx_fmp if fx_fmp else "",
+    ]))
+
+    return {
+        "equities":    equities[:trim],
+        "commodities": commodities[:trim],
+        "bonds":       bonds[:trim],
+        "currencies":  currencies[:trim],
+    }
 
 
 # ---------------------------------------------------------------------------

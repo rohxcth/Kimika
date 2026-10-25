@@ -25,7 +25,7 @@ from app.fetch import fetch
 from app.finance import to_usd
 from app import llm
 from app.report import ReportData, save_report
-from app.sources import RawDeal, discover_all, discover_economy_context
+from app.sources import RawDeal, discover_all, discover_economy_context, discover_markets_context
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +78,10 @@ def run(date_str: str | None = None) -> dict:
             save_report(report)
             saved_reports.append(report)
 
-    # 7. Economy & Markets report (one per day)
-    economy_report = _write_economy_report(date_str)
-    if economy_report is not None:
-        save_report(economy_report)
-        saved_reports.append(economy_report)
+    # 7. Five daily market column reports (Economy, Equities, Commodities, Bonds, Currencies)
+    for market_report in _write_market_reports(date_str):
+        save_report(market_report)
+        saved_reports.append(market_report)
 
     quota = llm.quota_log()
     logger.info(
@@ -187,25 +186,50 @@ def _stub_verification(report: ReportData) -> list[dict]:
     ]
 
 
-def _write_economy_report(date_str: str) -> ReportData | None:
-    """Fetch economy context and write the Economy & Markets report.
+def _write_market_reports(date_str: str) -> list[ReportData]:
+    """Generate all 5 daily market column reports: Economy, Equities, Commodities, Bonds, Currencies.
 
-    One report per day. Returns None on failure (logged; never crashes).
+    Fetches economy context (Fed/RBA/FRED) and market data (yfinance/FMP),
+    then calls one LLM writer per column. A failure in any single report is
+    logged and skipped; the others still run.
     """
+    target_date = date.fromisoformat(date_str)
+    reports: list[ReportData] = []
+
+    # Fetch contexts (each degrades gracefully to "" on failure)
     try:
-        target_date = __import__("datetime").date.fromisoformat(date_str)
-        context = discover_economy_context(target_date)
+        economy_ctx = discover_economy_context(target_date)
     except Exception as exc:
         logger.warning("Economy context fetch failed: %s", exc)
-        context = ""
+        economy_ctx = ""
 
     try:
-        report = llm.write_economy_report(context, "", date_str)
-        report.verification_log = _stub_verification(report)
-        return report
+        markets_ctx = discover_markets_context(target_date)
     except Exception as exc:
-        logger.error("Economy report write failed: %s", exc)
-        return None
+        logger.warning("Markets context fetch failed: %s", exc)
+        markets_ctx = {}
+
+    writers = [
+        (llm.write_economy_report,     economy_ctx,                  "Economy"),
+        (llm.write_equities_report,    markets_ctx.get("equities", ""),   "Equities"),
+        (llm.write_commodities_report, markets_ctx.get("commodities", ""), "Commodities"),
+        (llm.write_bonds_report,       markets_ctx.get("bonds", ""),      "Bonds"),
+        (llm.write_currencies_report,  markets_ctx.get("currencies", ""), "Currencies"),
+    ]
+
+    for writer_fn, ctx, label in writers:
+        try:
+            if label == "Economy":
+                report = writer_fn(ctx, "", date_str)
+            else:
+                report = writer_fn(ctx, date_str)
+            report.verification_log = _stub_verification(report)
+            reports.append(report)
+            logger.info("Market report written: %s", label)
+        except Exception as exc:
+            logger.error("%s report write failed: %s", label, exc)
+
+    return reports
 
 
 # ---------------------------------------------------------------------------

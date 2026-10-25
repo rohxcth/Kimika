@@ -43,9 +43,9 @@ M&A   |  ECM   |  DCM   |  Economy   |  Equities   |  Commodities   |  Bonds   |
 - Every deal discovered gets its own full report. The **largest deals by value** are covered first; smaller deals are covered as quota allows (`config.yaml`, `max_full_reports_per_run`).
 - **Prioritise size.** When there are more deals than the free-tier quota allows, keep the biggest deals (by deal value in US$ equivalent) and drop the smallest first. Ongoing deals reappear with an update when they hit a new stage (competing bid, scheme booklet, IER, vote, court approval, completion).
 
-### 3.2 Economy & Markets report (one per day)
+### 3.2 Daily market columns (five standalone reports per day)
 
-One report, five sections in this order: **Economy · Equities · Commodities · Debt · Currencies**.
+Five separate reports published each day, one per column: **Economy · Equities · Commodities · Bonds · Currencies**. Each is a standalone expandable card on the page, identical in style to deal cards. report_types: `economy`, `equities`, `commodities`, `bonds`, `currencies`.
 
 **Economy: macroeconomic and policy analysis**
 - **Priority:** United States and Australia, with **interest rates in focus**.
@@ -68,7 +68,7 @@ One report, five sections in this order: **Economy · Equities · Commodities ·
 - **ECM:** snapshot · why now · process · pricing & discount · underwriting & fees · **Market view** · outlook · bibliography
 - **DCM:** snapshot · credit story · process (IPTs → pricing) · spread & pricing · use of proceeds · **Market view** · outlook · bibliography
 - **Other:** closest template, adapted (LBO, block trade, restructuring, spin-off)
-- **Economy & Markets (one report, 2–4 pages):** Economy (macro landscape · policy · outlook & scenarios) → Equities → Commodities → Debt → Currencies (each: levels/moves table · what moved and why · what the market expects next) → bibliography
+- **Daily market columns (5 separate reports):** Economy (macro landscape · policy · outlook & scenarios) · Equities · Commodities · Bonds · Currencies (each: levels/moves table · what moved and why · what the market expects next · bibliography)
 - **Market view:** what the market and commentators think, synthesised from multiple sources: price reaction, arbitrage spread (target price vs offer), shareholder and proxy adviser positions, broker and analyst commentary, credit reaction. Consensus first; dissenting views noted.
 - **Not public?** Say "Not publicly disclosed"; typical process goes under **General context**.
 - **No in-text citations.** Bibliography at the end of each report.
@@ -94,7 +94,7 @@ Discover → Cross-verify → Pick → Research → Write → Verify → Save (J
    - **Conflicts:** search for more sources and go with what they support (primary outranks secondary). If none exist, pick the most authoritative source and record the choice and the reason.
 3. **Pick:** Gemini Flash-Lite classifies everything in batched requests (M&A/ECM/DCM/Other, region, size, stage). Deals are ranked by **deal value (US$ equivalent)**. The largest get full reports up to the daily quota cap. Undisclosed values rank by the company's market cap as a proxy.
 4. **Research:** for full reports, fetch the primary documents and trim to the relevant sections (terms, background/negotiations, IER/fairness opinion summary, financing). For every report, also read **multiple independent commentary sources** to establish the market consensus and the main alternative views.
-5. **Write:** Gemini Flash writes full deal reports and the Economy & Markets report as structured JSON following the templates; Flash-Lite handles classification and helper summaries.
+5. **Write:** Gemini Flash writes full deal reports and the 5 daily market column reports as structured JSON following the templates; Flash-Lite handles classification and helper summaries.
 6. **Verify:** derived figures computed in Python (`app/finance.py`); stated figures must have a short quote found in the source; every figure gets a status (✅ Verified · ✅ Resolved · 🔁 Recomputed · ❓ Single source), stored in the report's JSON verification log, not printed in the report body.
 7. **Save:** one folder per report, `reports/YYYY-MM-DD/<report-slug>/report.json`, plus `reports/YYYY-MM-DD/index.json` listing the day's reports for the page. Ongoing deals: the report lives under the deal's slug and keeps a version history.
 
@@ -196,7 +196,7 @@ kimika/
 
 ## 10. Definition of done
 - [ ] Opening the app shows today's report cards, generated automatically every day
-- [ ] Reports display in full in the browser; one Economy & Markets report per day (PDF export deferred)
+- [ ] Reports display in full in the browser; 5 daily market column reports per day (Economy, Equities, Commodities, Bonds, Currencies); PDF export deferred
 - [ ] Reports read cleanly with no in-text citations; each ends with a bibliography; every report has an outlook & scenarios section reflecting market consensus
 - [ ] At least 3 M&A deal reports (US, AU, UK) with negotiation and valuation sections from primary documents; every discovered deal gets its own full report (no deal wrap)
 - [ ] Market figures cross-verified against ≥2 sources; conflicts resolved and recorded

@@ -1,0 +1,35 @@
+{
+  "slug": "equities-26-oct-2026-equities-global-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "equities",
+  "region": "global",
+  "title": "Equities: 26 Oct 2026",
+  "key_takeaways": [
+    "S&P 500 rose 0.6% to 5,842; Nasdaq 100 up 0.9% on strong mega-cap earnings, led by Microsoft and Alphabet beats.",
+    "ASX 200 gained 0.4% to 8,215, with miners and banks both contributing after the RBA hold was well-telegraphed.",
+    "FTSE 100 lagged at -0.2% as sterling strengthened on UK services PMI; European markets broadly flat."
+  ],
+  "sections": {
+    "1_equities": "## Levels and moves\n\n| Index | Level | 1-day | 1-week |\n|---|---|---|---|\n| S&P 500 | 5,842 | +0.6% | +1.2% |\n| Nasdaq 100 | 20,314 | +0.9% | +1.8% |\n| ASX 200 | 8,215 | +0.4% | +0.7% |\n| FTSE 100 | 8,312 | -0.2% | +0.3% |\n| Nikkei 225 | 38,650 | +0.3% | -0.5% |\n| Hang Seng | 20,420 | -0.8% | -1.2% |\n\n## What moved and why\n\n**US session:** S&P 500 extended gains after Microsoft and Alphabet reported Q3 earnings beats. Microsoft Azure revenue grew 33% year-on-year, above consensus of 29%. Alphabet advertising revenue reaccelerated. Tech (XLK) led sectors up 1.2%; utilities and real estate lagged as 10-year yields held above 4.35%. Small caps (Russell 2000) underperformed the S&P 500 for the fifth consecutive session, reflecting sensitivity to the higher-for-longer rate environment.\n\n**AU session:** ASX 200 opened higher following positive Wall Street lead. Materials (+0.7%) and financials (+0.5%) led. BHP added 0.8% as iron ore held above US$105/t on resilient Chinese steel production data. The four major banks moved in a tight range after the RBA hold confirmed the status quo.\n\n**Other markets:** Hang Seng fell 0.8% as China property developer concerns resurfaced; Nikkei added 0.3% on yen weakness.\n\n## Cross-asset context\n\nUS 10-year yields were stable at 4.38%, providing a broadly supportive backdrop for equities - not low enough to drive a rate-sensitive re-rating, but not rising enough to pressure valuations. The USD was marginally weaker (DXY -0.1%), mildly supportive for commodities and EM. The VIX edged down to 17.2, below its 30-day average of 18.5, signalling reduced near-term hedging demand.\n\n## Outlook\n\nConsensus is cautiously constructive into year-end: the soft-landing thesis remains intact, Q3 earnings season has been solid (75% of S&P 500 reporters beating EPS estimates as at 25 Oct), and seasonality is positive. The main risk is a re-acceleration of US inflation that reprices the Fed path. Markets will focus on Friday's US PCE print and next week's FOMC meeting."
+  },
+  "verification_log": [
+    {
+      "figure": "S&P 500 level (5,842)",
+      "value": "5,842",
+      "status": "\u2753 Single source",
+      "sources": ["yfinance sample data"],
+      "note": "Sample data - not cross-verified."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "S&P 500 Index Data",
+      "publisher": "yfinance / Yahoo Finance",
+      "date": "2026-10-26",
+      "url": "https://finance.yahoo.com/quote/%5EGSPC/",
+      "category": "Market data"
+    }
+  ],
+  "metadata": { "region": "global", "report_date": "2026-10-26" },
+  "updated_at": "2026-10-26T08:30:00Z"
+}

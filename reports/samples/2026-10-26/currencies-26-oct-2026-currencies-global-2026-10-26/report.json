@@ -1,0 +1,42 @@
+{
+  "slug": "currencies-26-oct-2026-currencies-global-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "currencies",
+  "region": "global",
+  "title": "Currencies: 26 Oct 2026",
+  "key_takeaways": [
+    "DXY at 104.2, marginally weaker (-0.1%) as risk appetite improved on US earnings beats; AUD/USD at 0.6482.",
+    "AUD firmed slightly on stable iron ore and equity risk-on; the pair remains capped by the RBA-Fed rate differential and China risk.",
+    "USD/JPY edged to 152.30; the BoJ is watching closely but intervention threshold is seen closer to 155."
+  ],
+  "sections": {
+    "1_currencies": "## Levels and moves\n\n| Pair | Rate | 1-day change |\n|---|---|---|\n| AUD/USD | 0.6482 | +0.2% |\n| EUR/USD | 1.0815 | +0.1% |\n| GBP/USD | 1.2985 | +0.3% |\n| USD/JPY | 152.30 | +0.1% |\n| USD/CNH | 7.1320 | flat |\n| DXY | 104.20 | -0.1% |\n\n## US dollar\n\nThe DXY edged down 0.1% to 104.20 as risk sentiment improved on strong US earnings (Microsoft, Alphabet). The dollar remains broadly supported by the interest rate differential - Fed funds at 5.25-5.50% against near-zero rates in Japan and sub-4% in Europe. The consensus view is for DXY to drift lower toward 102-103 over 12 months as the Fed begins cutting and the rate differential narrows. The key upside risk to the USD is a re-acceleration of US inflation keeping the Fed on hold.\n\n## Australian dollar\n\nAUD/USD at 0.6482, up 0.2% on the day. The pair is near the lower end of its 3-month range (0.6450-0.6720). Key drivers: the positive equity session (risk-on), stable iron ore above US$106/t, and the RBA hold yesterday (no surprise, no new information). The AUD/USD 0.65 level has provided support twice in October; a break would likely test 0.6420.\n\nAUD/JPY at 98.65 - the cross is sensitive to risk sentiment and is watching the BoJ's next move. AUD/EUR at 0.5993 (just below parity), reflecting the relatively similar ECB-RBA rate path.\n\nThe consensus of major bank research (CBA, Westpac, NAB economics teams as of October 2026) is for AUD/USD to trade in the 0.64-0.68 range through H1 2027, with a gradual drift higher as the Fed cuts and commodity prices hold. The main downside risk is a China growth shock or significant iron ore price decline.\n\n## Other majors\n\n**EUR/USD:** 1.0815, up 0.1%. The ECB delivered its third 25bp cut of 2026 in October (deposit rate now 2.75%); markets price one more cut before year-end. EUR is broadly range-bound.\n\n**GBP/USD:** 1.2985, up 0.3% after UK services PMI came in stronger than expected (53.2 vs 51.8 consensus), reducing near-term Bank of England cut expectations.\n\n**USD/JPY:** 152.30, drifting toward the 155 level that BoJ officials have previously flagged as a watch point. BoJ intervention in late 2024 was triggered at 160; the current level is not seen as a trigger but the pace of move matters.\n\n## Outlook\n\nConsensus: USD softens gradually through 2027 as the Fed eases. AUD/USD expected to recover toward 0.68-0.70 in H2 2027 if the soft-landing thesis holds and commodity prices remain supported. EUR/USD range-bound at 1.05-1.10. The key FX risk for Australian assets is a sharper-than-expected China slowdown, which would pressure both AUD and iron ore simultaneously."
+  },
+  "verification_log": [
+    {
+      "figure": "AUD/USD (0.6482)",
+      "value": "0.6482",
+      "status": "\u2753 Single source",
+      "sources": ["yfinance sample data"],
+      "note": "Sample data."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "Foreign Exchange Rates",
+      "publisher": "yfinance / Yahoo Finance",
+      "date": "2026-10-26",
+      "url": "https://finance.yahoo.com/currencies/",
+      "category": "Market data"
+    },
+    {
+      "title": "RBA Exchange Rate Data",
+      "publisher": "Reserve Bank of Australia",
+      "date": "2026-10-26",
+      "url": "https://www.rba.gov.au/statistics/frequency/exchange-rates.html",
+      "category": "Central banks & official data"
+    }
+  ],
+  "metadata": { "region": "global", "report_date": "2026-10-26" },
+  "updated_at": "2026-10-26T09:00:00Z"
+}

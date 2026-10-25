@@ -39,7 +39,7 @@ You are building this app. The app's own prompts (`app/prompts/`) must follow th
 - **Zero cost.** Kimika must run entirely on free tiers. The AI model is **Google Gemini on the free tier** (no billing account, no credit card). Never add a paid API, never enable billing, never suggest a paid plan as the fix.
 - **Free-tier rate limits are the budget.** Gemini's free tier has small daily request quotas per project (tight on Flash, larger on Flash-Lite), resetting at midnight Pacific time. Therefore:
   - Model names and per-model daily request caps live in `config.yaml`, never hard-coded. Check current model names and SDK usage with Context7, and current limits in Google AI Studio.
-  - **Flash-Lite** for volume work: discovery, classification (batch many items into one request), markets sections. **Flash** only for full deal reports and the Economy & Markets report.
+  - **Flash-Lite** for volume work: discovery, classification (batch many items into one request), markets sections. **Flash** only for full deal reports and the 5 daily market column reports (Economy, Equities, Commodities, Bonds, Currencies).
   - Count every request; stop starting new full reports before the cap is hit and publish what's done. Handle 429 (quota) errors gracefully: back off, never crash.
   - Cache documents and model responses by content hash. Trim documents to relevant sections before sending them.
   - Don't use Gemini's paid features (e.g. Google Search grounding); research uses Kimika's own fetchers.

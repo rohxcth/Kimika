@@ -29,6 +29,10 @@ from app.llm import (
     write_ecm_report,
     write_dcm_report,
     write_economy_report,
+    write_equities_report,
+    write_commodities_report,
+    write_bonds_report,
+    write_currencies_report,
     write_ma_report,
 )
 from app.report import ReportData
@@ -528,7 +532,7 @@ def test_write_economy_report_success(tmp_path):
     report = write_economy_report("Fed held rates. RBA held rates.", "", DATE_STR)
 
     assert isinstance(report, ReportData)
-    assert report.report_type == "economy_markets"
+    assert report.report_type == "economy"
     assert report.region == "global"
     assert "Economy" in report.title
     assert len(report.key_takeaways) == 3
@@ -545,7 +549,7 @@ def test_write_economy_report_falls_back_to_stub(tmp_path):
 
     report = write_economy_report("", "", DATE_STR)
     assert isinstance(report, ReportData)
-    assert report.report_type == "economy_markets"
+    assert report.report_type == "economy"
     assert report.region == "global"
 
 
@@ -558,3 +562,91 @@ def test_write_economy_report_uses_flash_quota(tmp_path):
     before = llm_mod._request_counts["flash"]
     write_economy_report("context", "", DATE_STR)
     assert llm_mod._request_counts["flash"] == before + 1
+
+
+# ---------------------------------------------------------------------------
+# Market column writers — equities, commodities, bonds, currencies
+# ---------------------------------------------------------------------------
+
+def _market_response(section_key: str, title: str) -> str:
+    import json as _json
+    return _json.dumps({
+        "title": title,
+        "key_takeaways": ["Point A", "Point B", "Point C"],
+        "sections": {
+            section_key: "## Levels\n\nData here.",
+            "2_bibliography": [
+                {"title": "Data Source", "publisher": "yfinance", "date": DATE_STR,
+                 "url": "https://finance.yahoo.com/", "category": "Market data"}
+            ],
+        },
+        "metadata": {"region": "global", "report_date": DATE_STR},
+        "verification_log": [],
+    })
+
+
+def test_write_equities_report_success(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(_market_response("1_equities", f"Equities: {DATE_STR}"))
+    llm_mod._set_client(mock_client)
+
+    report = write_equities_report("S&P 500 context", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "equities"
+    assert report.region == "global"
+    assert "Equities" in report.title
+    assert "1_equities" in report.sections
+
+
+def test_write_commodities_report_success(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(_market_response("1_commodities", f"Commodities: {DATE_STR}"))
+    llm_mod._set_client(mock_client)
+
+    report = write_commodities_report("Gold context", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "commodities"
+    assert "Commodities" in report.title
+    assert "1_commodities" in report.sections
+
+
+def test_write_bonds_report_success(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(_market_response("1_bonds", f"Bonds: {DATE_STR}"))
+    llm_mod._set_client(mock_client)
+
+    report = write_bonds_report("US 10yr context", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "bonds"
+    assert "Bonds" in report.title
+    assert "1_bonds" in report.sections
+
+
+def test_write_currencies_report_success(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(_market_response("1_currencies", f"Currencies: {DATE_STR}"))
+    llm_mod._set_client(mock_client)
+
+    report = write_currencies_report("AUD/USD context", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "currencies"
+    assert "Currencies" in report.title
+    assert "1_currencies" in report.sections
+
+
+def test_market_writers_fall_back_to_stub(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = Exception("error")
+    llm_mod._set_client(mock_client)
+
+    for fn, rtype in [
+        (write_equities_report, "equities"),
+        (write_commodities_report, "commodities"),
+        (write_bonds_report, "bonds"),
+        (write_currencies_report, "currencies"),
+    ]:
+        report = fn("ctx", DATE_STR)
+        assert isinstance(report, ReportData)
+        assert report.report_type == rtype
+        assert report.region == "global"
