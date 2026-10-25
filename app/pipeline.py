@@ -25,7 +25,7 @@ from app.fetch import fetch
 from app.finance import to_usd
 from app import llm
 from app.report import ReportData, save_report
-from app.sources import RawDeal, discover_all
+from app.sources import RawDeal, discover_all, discover_economy_context
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +78,15 @@ def run(date_str: str | None = None) -> dict:
             save_report(report)
             saved_reports.append(report)
 
+    # 7. Economy & Markets report (one per day)
+    economy_report = _write_economy_report(date_str)
+    if economy_report is not None:
+        save_report(economy_report)
+        saved_reports.append(economy_report)
+
     quota = llm.quota_log()
     logger.info(
-        "Pipeline done: %d full reports, quota=%s",
+        "Pipeline done: %d total reports (incl. economy), quota=%s",
         len(saved_reports), quota,
     )
     return {
@@ -180,6 +186,26 @@ def _stub_verification(report: ReportData) -> list[dict]:
         }
     ]
 
+
+def _write_economy_report(date_str: str) -> ReportData | None:
+    """Fetch economy context and write the Economy & Markets report.
+
+    One report per day. Returns None on failure (logged; never crashes).
+    """
+    try:
+        target_date = __import__("datetime").date.fromisoformat(date_str)
+        context = discover_economy_context(target_date)
+    except Exception as exc:
+        logger.warning("Economy context fetch failed: %s", exc)
+        context = ""
+
+    try:
+        report = llm.write_economy_report(context, "", date_str)
+        report.verification_log = _stub_verification(report)
+        return report
+    except Exception as exc:
+        logger.error("Economy report write failed: %s", exc)
+        return None
 
 
 # ---------------------------------------------------------------------------

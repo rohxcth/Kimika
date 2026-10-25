@@ -1,0 +1,73 @@
+{
+  "slug": "economy-markets-2026-10-26-economymarkets-global-2026-10-26",
+  "date": "2026-10-26",
+  "report_type": "economy_markets",
+  "region": "global",
+  "title": "Economy & Markets: 26 Oct 2026",
+  "key_takeaways": [
+    "The Fed held rates at 5.25-5.50% at the November 2026 meeting; the dot plot signals two 25bp cuts by end-2027 contingent on inflation continuing to ease toward the 2% target.",
+    "The RBA held the cash rate at 4.35% in October; the Statement on Monetary Policy retained a tightening bias, but markets are pricing the first cut by Q2 2027 given softening CPI and rising unemployment.",
+    "US 10-year Treasuries trade at 4.38%, with the yield curve steepening as markets price a soft-landing scenario; the AUD/USD sits at 0.6480, near the lower end of its 3-month range."
+  ],
+  "sections": {
+    "1_economy": "## United States\n\nThe Federal Open Market Committee held the federal funds rate target at 5.25-5.50% at its 1 November 2026 meeting, as widely expected. The post-meeting statement retained the phrase \"additional firming may be appropriate\" but FOMC members signalled they are data-dependent heading into 2027. The September dot plot (the most recent SEP) showed a median projection of two 25bp cuts in 2027, with the first cut contingent on PCE inflation returning to 2.1% or below on a sustained basis.\n\nOn the macro front, Q3 2026 GDP came in at 2.1% annualised (BEA advance estimate), slightly below the 2.4% consensus but consistent with a soft landing. The September CPI print was 3.1% year-on-year (BLS), down from 3.4% in June; core PCE - the Fed's preferred gauge - was 2.7%, still above target. The labour market remains resilient: September non-farm payrolls added 192,000 jobs (BLS), and the unemployment rate was 4.1%, broadly consistent with the Fed's 4.4% end-year projection.\n\nMarkets are pricing approximately 40bp of cuts by end-2027, slightly less than the dot plot implies, reflecting residual uncertainty about the inflation path. The main dissenting view - held by 2 of 12 FOMC members - is that rates should stay at 5.50% until core PCE is sustainably at or below 2.5%. A re-acceleration in services inflation or a stronger-than-expected labour market is the key upside risk to the rates outlook.\n\n## Australia\n\nThe Reserve Bank of Australia held the cash rate at 4.35% at its October 2026 meeting, in line with consensus. The post-meeting statement noted that \"inflation is returning to target, but the pace of disinflation has slowed,\" and retained a mildly tightening bias. Governor Bullock's press conference signalled the Board does not expect to cut before seeing another full quarterly CPI print, effectively ruling out action before February 2027.\n\nThe Q3 2026 CPI came in at 3.8% year-on-year (ABS), down from 4.1% in Q2 but above the RBA's 3.5% forecast for this period. Trimmed mean (the RBA's preferred core measure) was 3.5%, still above the 2-3% target band. Labour force data showed unemployment edging up to 4.3% (ABS, September), which markets read as a softening signal. Business investment remains solid, but consumer spending is slowing as fixed-rate mortgage rollovers into higher variable rates continue.\n\nMarkets are pricing the first 25bp cut in May 2027 (implied by OIS pricing as at 25 Oct 2026). The consensus of major bank economists (CBA, NAB, Westpac, ANZ economics teams, based on published research) is for the RBA to hold through H1 2027 and cut twice in H2, taking the cash rate to 3.85% by end-2027. The dissenting view - a small minority - sees a rate hike if trimmed mean CPI does not fall convincingly in Q4.\n\n## Outlook and scenarios\n\n**Base case (consensus):** The Fed executes a gradual, data-dependent easing cycle in 2027 (50bp total). The RBA begins cutting in mid-2027 as inflation falls back into band. US growth stays positive but below trend; Australia avoids recession. The AUD/USD holds in the 0.64-0.67 range; AU 10-year government bond yields ease modestly from current 4.55%.\n\n**Scenario 1 - Fed cuts faster than expected:** If US core PCE falls to 2.2% by February 2027 and payrolls soften below 100,000/month, the Fed could cut 75bp in 2027, pulling global bond yields lower and supporting risk assets and deal activity. AUD/USD could rally to 0.68-0.70.\n\n**Scenario 2 - Inflation re-accelerates:** If US services inflation stalls above 3.5% and the December payrolls print is strong (above 250,000), markets could reprice to zero Fed cuts in 2027. US 10-year yields would likely move toward 4.7-4.8%, widening corporate credit spreads and slowing M&A activity (higher financing costs and lower equity valuations).\n\n**Scenario 3 - RBA hikes:** If Q4 CPI trimmed mean comes in above 3.8%, the RBA could deliver a 25bp hike in February 2027, which would be a significant surprise. AUD/USD would likely spike toward 0.67 but broader risk-off from the surprise could offset gains; AU equity markets would underperform."
+  },
+  "verification_log": [
+    {
+      "figure": "Fed funds rate (5.25-5.50%)",
+      "value": "5.25-5.50%",
+      "status": "\u2753 Single source",
+      "sources": ["Federal Reserve press release, 1 Nov 2026"],
+      "note": "Sample data - not cross-verified (synthetic)."
+    },
+    {
+      "figure": "RBA cash rate (4.35%)",
+      "value": "4.35%",
+      "status": "\u2753 Single source",
+      "sources": ["RBA media release, Oct 2026"],
+      "note": "Sample data - not cross-verified (synthetic)."
+    },
+    {
+      "figure": "US CPI (3.1% YoY, Sep 2026)",
+      "value": "3.1%",
+      "status": "\u2753 Single source",
+      "sources": ["BLS CPI release, Oct 2026"],
+      "note": "Sample data."
+    }
+  ],
+  "bibliography": [
+    {
+      "title": "FOMC Statement, 1 November 2026",
+      "publisher": "Federal Reserve",
+      "date": "2026-11-01",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "category": "Central banks & official data"
+    },
+    {
+      "title": "RBA Cash Rate Decision, October 2026",
+      "publisher": "Reserve Bank of Australia",
+      "date": "2026-10-07",
+      "url": "https://www.rba.gov.au/monetary-policy/int-rate-decisions/",
+      "category": "Central banks & official data"
+    },
+    {
+      "title": "Consumer Price Index Summary, September 2026",
+      "publisher": "Bureau of Labor Statistics",
+      "date": "2026-10-10",
+      "url": "https://www.bls.gov/cpi/",
+      "category": "Central banks & official data"
+    },
+    {
+      "title": "Consumer Price Index, Australia, September Quarter 2026",
+      "publisher": "Australian Bureau of Statistics",
+      "date": "2026-10-29",
+      "url": "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/",
+      "category": "Central banks & official data"
+    }
+  ],
+  "metadata": {
+    "region": "global",
+    "report_date": "2026-10-26"
+  },
+  "updated_at": "2026-10-26T08:00:00Z"
+}

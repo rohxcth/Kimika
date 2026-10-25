@@ -292,6 +292,84 @@ def _rns_filing_type(headline: str, category: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Economy context discovery (Fed, RBA, FRED)
+# ---------------------------------------------------------------------------
+
+# Public URLs - no login required
+_FED_PRESS_RELEASES_URL = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+_RBA_DECISIONS_URL = "https://www.rba.gov.au/monetary-policy/int-rate-decisions/"
+_FRED_SERIES_URL = "https://api.stlouisfed.org/fred/series/observations"
+
+# Key FRED series: Fed funds rate, CPI (all items), unemployment, 10y Treasury
+_FRED_SERIES = {
+    "FEDFUNDS": "Federal Funds Effective Rate",
+    "CPIAUCSL": "US CPI (All Urban Consumers, SA)",
+    "UNRATE": "US Unemployment Rate",
+    "GS10": "US 10-Year Treasury Constant Maturity Rate",
+}
+
+
+def discover_economy_context(target_date: date) -> str:
+    """Fetch macro context for the Economy & Markets report.
+
+    Returns a trimmed string combining:
+      - Federal Reserve FOMC calendar / press release page (public HTML)
+      - RBA interest rate decisions page (public HTML)
+      - FRED data for key US series (requires FRED_API_KEY in env; skipped if absent)
+
+    A failure on any individual source is logged and skipped; the others still run.
+    The combined text is trimmed to doc_trim_chars (from config.yaml) before return.
+    """
+    import os
+    trim = cfg["pipeline"]["doc_trim_chars"]
+    segments: list[str] = []
+
+    # 1. Federal Reserve FOMC page
+    try:
+        html = fetch(_FED_PRESS_RELEASES_URL)
+        segments.append(f"=== Federal Reserve FOMC Calendar ===\n{html[:3000]}")
+        logger.info("Economy context: fetched Fed page (%d chars)", len(html))
+    except Exception as exc:
+        logger.warning("Economy context: Fed fetch failed: %s", exc)
+
+    # 2. RBA interest rate decisions
+    try:
+        html = fetch(_RBA_DECISIONS_URL)
+        segments.append(f"=== RBA Interest Rate Decisions ===\n{html[:3000]}")
+        logger.info("Economy context: fetched RBA page (%d chars)", len(html))
+    except Exception as exc:
+        logger.warning("Economy context: RBA fetch failed: %s", exc)
+
+    # 3. FRED data (optional - needs API key)
+    fred_key = os.environ.get("FRED_API_KEY", "")
+    if fred_key:
+        fred_snippets: list[str] = []
+        for series_id, label in _FRED_SERIES.items():
+            try:
+                data = fetch_json(
+                    f"{_FRED_SERIES_URL}?series_id={series_id}"
+                    f"&api_key={fred_key}&sort_order=desc&limit=3&file_type=json"
+                )
+                obs = data.get("observations", [])
+                if obs:
+                    # Most recent 3 observations
+                    rows = "; ".join(
+                        f"{o['date']}: {o['value']}"
+                        for o in obs if o.get("value") not in (".", None)
+                    )
+                    fred_snippets.append(f"{label} ({series_id}): {rows}")
+            except Exception as exc:
+                logger.warning("Economy context: FRED %s failed: %s", series_id, exc)
+        if fred_snippets:
+            segments.append("=== FRED Macroeconomic Data ===\n" + "\n".join(fred_snippets))
+    else:
+        logger.info("Economy context: FRED_API_KEY not set - skipping FRED data")
+
+    combined = "\n\n".join(segments)
+    return combined[:trim]
+
+
+# ---------------------------------------------------------------------------
 # Combined discovery
 # ---------------------------------------------------------------------------
 

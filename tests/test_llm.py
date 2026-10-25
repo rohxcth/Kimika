@@ -28,6 +28,7 @@ from app.llm import (
     reset_quota_log,
     write_ecm_report,
     write_dcm_report,
+    write_economy_report,
     write_ma_report,
 )
 from app.report import ReportData
@@ -497,3 +498,63 @@ def test_write_dcm_report_falls_back_to_stub_on_failure(tmp_path):
     report = write_dcm_report(_raw_deal(), "doc", "sources", DATE_STR)
     assert isinstance(report, ReportData)
     assert report.report_type == "dcm"
+
+
+# ---------------------------------------------------------------------------
+# write_economy_report
+# ---------------------------------------------------------------------------
+
+ECONOMY_RESPONSE = __import__("json").dumps({
+    "title": "Economy & Markets: 2026-10-26",
+    "key_takeaways": ["Fed held at 5.25-5.50%", "RBA held at 4.35%", "Markets price 2027 cuts"],
+    "sections": {
+        "1_economy": "## United States\nFed held rates...\n\n## Australia\nRBA held...",
+        "2_bibliography": [
+            {"title": "FOMC Statement", "publisher": "Federal Reserve", "date": "2026-11-01",
+             "url": "https://www.federalreserve.gov/", "category": "Central banks & official data"}
+        ],
+    },
+    "metadata": {"region": "global", "report_date": "2026-10-26"},
+    "verification_log": [],
+})
+
+
+def test_write_economy_report_success(tmp_path):
+    import json as _json
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(ECONOMY_RESPONSE)
+    llm_mod._set_client(mock_client)
+
+    report = write_economy_report("Fed held rates. RBA held rates.", "", DATE_STR)
+
+    assert isinstance(report, ReportData)
+    assert report.report_type == "economy_markets"
+    assert report.region == "global"
+    assert "Economy" in report.title
+    assert len(report.key_takeaways) == 3
+    assert "1_economy" in report.sections
+    assert "2_bibliography" not in report.sections
+    assert len(report.bibliography) == 1
+
+
+def test_write_economy_report_falls_back_to_stub(tmp_path):
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = Exception("error")
+    llm_mod._set_client(mock_client)
+
+    report = write_economy_report("", "", DATE_STR)
+    assert isinstance(report, ReportData)
+    assert report.report_type == "economy_markets"
+    assert report.region == "global"
+
+
+def test_write_economy_report_uses_flash_quota(tmp_path):
+    import json as _json
+    llm_mod._LLM_CACHE_DIR = tmp_path / "cache"
+    mock_client = _make_mock_client(ECONOMY_RESPONSE)
+    llm_mod._set_client(mock_client)
+
+    before = llm_mod._request_counts["flash"]
+    write_economy_report("context", "", DATE_STR)
+    assert llm_mod._request_counts["flash"] == before + 1

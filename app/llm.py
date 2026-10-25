@@ -39,6 +39,7 @@ from pathlib import Path
 from app.config import cfg
 from app.prompts.ma_report import CLASSIFY_BATCH, MA_FULL_REPORT, SYSTEM
 from app.prompts.ecm_dcm_report import ECM_FULL_REPORT, DCM_FULL_REPORT
+from app.prompts.economy_report import ECONOMY_SECTION
 from app.report import ReportData, make_slug
 
 logger = logging.getLogger(__name__)
@@ -457,6 +458,54 @@ def write_dcm_report(
 
     logger.warning("write_dcm_report fell back to stub for: %s", deal.get("title"))
     return _stub_dcm_report(deal, date_str)
+
+
+def write_economy_report(
+    context: str,
+    secondary_sources: str,
+    date_str: str,
+) -> ReportData:
+    """Write the Economy & Markets report (Economy section). Uses Flash.
+
+    context: pre-fetched Fed/RBA/FRED text from sources.discover_economy_context()
+    Returns a ReportData with report_type='economy_markets'.
+    Falls back to stub if Gemini is unavailable.
+    """
+    prompt = ECONOMY_SECTION.format(
+        primary_doc=context or "Macro context not available.",
+        secondary_sources=secondary_sources or "No secondary sources available.",
+        date=date_str,
+    )
+    text = _call(_FLASH, "flash", prompt)
+
+    if text:
+        parsed = _extract_json(text)
+        if isinstance(parsed, dict):
+            synthetic_deal = {"region": "global", "company": "Economy", "title": f"Economy & Markets: {date_str}"}
+            return _build_report_from_json(
+                parsed, synthetic_deal, date_str,
+                report_type="economy_markets",
+                bib_key="2_bibliography",
+            )
+
+    logger.warning("write_economy_report fell back to stub for date: %s", date_str)
+    return _stub_economy_report(date_str)
+
+
+def _stub_economy_report(date_str: str) -> ReportData:
+    title = f"Economy & Markets: {date_str}"
+    return ReportData(
+        slug=make_slug(title, "global", "economy_markets", date_str),
+        date=date_str,
+        report_type="economy_markets",
+        region="global",
+        title=title,
+        key_takeaways=["Stub report - Gemini unavailable or quota exceeded."],
+        sections={"1_economy": "Not yet populated."},
+        bibliography=[],
+        metadata={"region": "global", "report_date": date_str},
+        verification_log=[],
+    )
 
 
 # ---------------------------------------------------------------------------

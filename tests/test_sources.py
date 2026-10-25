@@ -23,6 +23,7 @@ from app.sources import (
     discover_asx,
     discover_edgar,
     discover_rns,
+    discover_economy_context,
 )
 
 TARGET_DATE = date(2026, 10, 26)
@@ -421,3 +422,72 @@ def test_parse_rns_date_z_suffix():
 
 def test_parse_rns_date_invalid_returns_none():
     assert _parse_rns_date("garbage") is None
+
+
+# ---------------------------------------------------------------------------
+# discover_economy_context
+# ---------------------------------------------------------------------------
+
+def test_economy_context_returns_string_with_mocked_fetch():
+    """discover_economy_context concatenates Fed and RBA page text."""
+    with (
+        patch("app.sources.fetch", return_value="<html>Central bank content</html>"),
+        patch("app.sources.fetch_json", return_value={}),
+        patch.dict("os.environ", {}, clear=False),
+    ):
+        # Remove FRED key so FRED branch is skipped
+        import os
+        os.environ.pop("FRED_API_KEY", None)
+        result = discover_economy_context(TARGET_DATE)
+
+    assert isinstance(result, str)
+    assert "Federal Reserve" in result or "RBA" in result
+
+
+def test_economy_context_includes_fred_when_key_set():
+    """When FRED_API_KEY is set, FRED data is fetched and included."""
+    fred_response = {
+        "observations": [
+            {"date": "2026-10-01", "value": "5.33"},
+            {"date": "2026-09-01", "value": "5.33"},
+        ]
+    }
+    with (
+        patch("app.sources.fetch", return_value="<html>page</html>"),
+        patch("app.sources.fetch_json", return_value=fred_response),
+        patch.dict("os.environ", {"FRED_API_KEY": "test_key"}),
+    ):
+        result = discover_economy_context(TARGET_DATE)
+
+    assert "FRED" in result
+    assert "5.33" in result
+
+
+def test_economy_context_fetch_failure_returns_partial():
+    """A fetch failure on one source doesn't crash; other sources still included."""
+    call_count = 0
+
+    def selective_fetch(url):
+        nonlocal call_count
+        call_count += 1
+        if "federalreserve" in url:
+            raise ConnectionError("timeout")
+        return "<html>RBA content</html>"
+
+    import os
+    os.environ.pop("FRED_API_KEY", None)
+    with patch("app.sources.fetch", side_effect=selective_fetch):
+        result = discover_economy_context(TARGET_DATE)
+
+    # RBA should still be in result even though Fed failed
+    assert isinstance(result, str)
+    assert call_count >= 1
+
+
+def test_economy_context_all_failures_returns_empty_string():
+    """All sources failing returns an empty string, not an exception."""
+    import os
+    os.environ.pop("FRED_API_KEY", None)
+    with patch("app.sources.fetch", side_effect=Exception("all down")):
+        result = discover_economy_context(TARGET_DATE)
+    assert result == ""

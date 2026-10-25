@@ -53,5 +53,16 @@
     "deal_value_usd": 49,
     "updated_at": "2026-10-26T07:50:00Z",
     "has_pdf": false
+  },
+  {
+    "slug": "economy-markets-2026-10-26-economymarkets-global-2026-10-26",
+    "date": "2026-10-26",
+    "report_type": "economy_markets",
+    "region": "global",
+    "title": "Economy & Markets: 26 Oct 2026",
+    "summary": "The Fed held at 5.25-5.50%; the RBA held at 4.35% with a mild tightening bias; markets price first cuts in 2027 for both central banks.",
+    "deal_value_usd": null,
+    "updated_at": "2026-10-26T08:00:00Z",
+    "has_pdf": false
   }
 ]
