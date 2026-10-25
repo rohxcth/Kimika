@@ -1,8 +1,8 @@
 # Kimika — Claude Code memory
 
 ## Project state
-- **Last completed step:** Step 1 (scaffold, config.yaml, .gitignore, app stubs)
-- **Next step:** Step 2 — `finance.py` + tests
+- **Last completed step:** Step 2 (finance.py + tests, 73 passing)
+- **Next step:** Step 3 — `fetch.py` (blocklist + cache) + tests
 
 ## Key facts
 - Python 3.14 (C:\Program Files\Python314\python.exe); use `python -m pytest -q`
