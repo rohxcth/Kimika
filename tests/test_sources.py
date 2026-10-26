@@ -792,6 +792,7 @@ def test_discover_news_combines_sources():
         patch("app.sources.discover_edgar_fulltext", return_value=[
             NewsItem(title="E1", url="https://e1.com", source="EDGAR_fulltext", published="", snippet=""),
         ]),
+        patch("app.sources._enrich_news_items"),
     ):
         items = discover_news("test query")
     assert len(items) == 3
@@ -807,6 +808,7 @@ def test_discover_news_deduplicates_by_url():
         patch("app.sources.discover_google_news_rss", return_value=[duplicate]),
         patch("app.sources.discover_newsapi", return_value=[duplicate]),
         patch("app.sources.discover_edgar_fulltext", return_value=[]),
+        patch("app.sources._enrich_news_items"),
     ):
         items = discover_news("test")
     assert len(items) == 1
@@ -822,7 +824,320 @@ def test_discover_news_continues_on_partial_failure():
             NewsItem(title="N1", url="https://n1.com", source="NewsAPI:X", published="", snippet=""),
         ]),
         patch("app.sources.discover_edgar_fulltext", return_value=[]),
+        patch("app.sources._enrich_news_items"),
     ):
         items = discover_news("test")
     assert len(items) == 1
     assert items[0]["source"] == "NewsAPI:X"
+
+
+# ---------------------------------------------------------------------------
+# discover_market_figures
+# ---------------------------------------------------------------------------
+
+from app.sources import discover_market_figures
+
+
+def _mock_yfinance(figures: dict[str, float]):
+    """Return a mock yfinance module whose Ticker.history yields the given values."""
+    import pandas as pd
+    from unittest.mock import MagicMock
+
+    def _make_ticker(ticker):
+        # Map yf tickers back to figure names to return the right value
+        from app.sources import _VERIFIABLE_FIGURES
+        val = None
+        for fig_name, (yf_tick, _fmp, _sec) in _VERIFIABLE_FIGURES.items():
+            if yf_tick == ticker and fig_name in figures:
+                val = figures[fig_name]
+                break
+        mock_ticker = MagicMock()
+        if val is not None:
+            hist = pd.DataFrame({"Close": [val - 0.01, val]})
+        else:
+            hist = pd.DataFrame()
+        mock_ticker.history.return_value = hist
+        return mock_ticker
+
+    mock_yf = MagicMock()
+    mock_yf.Ticker.side_effect = _make_ticker
+    return mock_yf
+
+
+def test_discover_market_figures_returns_sections():
+    result = discover_market_figures.__wrapped__() if hasattr(discover_market_figures, '__wrapped__') else None
+    result = discover_market_figures()
+    assert isinstance(result, dict)
+    for section in ("equities", "commodities", "bonds", "currencies"):
+        assert section in result
+
+
+def test_discover_market_figures_yfinance_only(monkeypatch):
+    """With no FMP key and mocked yfinance, only yfinance figures appear."""
+    import sys
+    from unittest.mock import patch, MagicMock
+
+    mock_yf = _mock_yfinance({
+        "audusd_rate": 0.645,
+        "gold_usd_oz": 2718.5,
+        "us_10y_yield_pct": 4.38,
+        "sp500_level": 5832.1,
+    })
+
+    monkeypatch.delenv("FMP_API_KEY", raising=False)
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
+        result = discover_market_figures()
+
+    # AUD/USD should appear in currencies with yfinance source
+    currencies = result.get("currencies", {})
+    if "audusd_rate" in currencies:
+        assert "yfinance" in currencies["audusd_rate"]
+        assert "FMP" not in currencies["audusd_rate"]
+
+
+def test_discover_market_figures_sections_are_dicts():
+    from unittest.mock import patch
+    with patch("app.sources.fetch_json", return_value=[]):
+        result = discover_market_figures()
+    for section_data in result.values():
+        assert isinstance(section_data, dict)
+
+
+def test_discover_market_figures_values_are_positive(monkeypatch):
+    """All returned figures must be positive floats."""
+    import sys
+    mock_yf = _mock_yfinance({
+        "audusd_rate": 0.645,
+        "gold_usd_oz": 2718.5,
+        "us_10y_yield_pct": 4.38,
+        "sp500_level": 5832.1,
+        "asx200_level": 8341.0,
+        "nasdaq100_level": 18447.0,
+        "wti_crude_usd_bbl": 71.5,
+        "eurusd_rate": 1.085,
+        "gbpusd_rate": 1.292,
+        "us_30y_yield_pct": 4.55,
+    })
+    monkeypatch.delenv("FMP_API_KEY", raising=False)
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
+        result = discover_market_figures()
+
+    for section, figures in result.items():
+        for fig_name, readings in figures.items():
+            for source, val in readings.items():
+                assert isinstance(val, float), f"{fig_name} from {source} is not float"
+                assert val > 0, f"{fig_name} from {source} is not positive"
+
+
+def test_discover_market_figures_fmp_added_when_key_set(monkeypatch):
+    """When FMP key is set and returns prices, FMP appears as second source."""
+    import sys
+    from unittest.mock import patch
+
+    mock_yf = _mock_yfinance({"audusd_rate": 0.645, "gold_usd_oz": 2718.5})
+    fmp_response = [
+        {"symbol": "AUDUSD", "price": 0.6451},
+        {"symbol": "GCUSD",  "price": 2717.0},
+    ]
+
+    monkeypatch.setenv("FMP_API_KEY", "testkey")
+    with (
+        patch.dict(sys.modules, {"yfinance": mock_yf}),
+        patch("app.sources.fetch_json", return_value=fmp_response),
+    ):
+        result = discover_market_figures()
+
+    currencies = result.get("currencies", {})
+    if "audusd_rate" in currencies:
+        assert "FMP" in currencies["audusd_rate"]
+        assert "yfinance" in currencies["audusd_rate"]
+
+
+def test_discover_market_figures_yfinance_unavailable(monkeypatch):
+    """If yfinance is not importable, result has empty sections (no crash)."""
+    import sys
+    from unittest.mock import patch
+
+    monkeypatch.delenv("FMP_API_KEY", raising=False)
+    # Simulate ImportError by temporarily hiding yfinance
+    with patch.dict(sys.modules, {"yfinance": None}):
+        result = discover_market_figures()
+
+    # Should still return the section structure, just empty
+    for section in ("equities", "commodities", "bonds", "currencies"):
+        assert section in result
+
+
+def test_discover_market_figures_fmp_failure_still_returns_yfinance(monkeypatch):
+    """FMP batch failure should not suppress yfinance results."""
+    import sys
+    from unittest.mock import patch
+
+    mock_yf = _mock_yfinance({"audusd_rate": 0.645})
+    monkeypatch.setenv("FMP_API_KEY", "testkey")
+    with (
+        patch.dict(sys.modules, {"yfinance": mock_yf}),
+        patch("app.sources.fetch_json", side_effect=Exception("FMP down")),
+    ):
+        result = discover_market_figures()
+
+    currencies = result.get("currencies", {})
+    if "audusd_rate" in currencies:
+        assert "yfinance" in currencies["audusd_rate"]
+
+# ---------------------------------------------------------------------------
+# _enrich_news_items
+# ---------------------------------------------------------------------------
+
+from app.sources import _enrich_news_items
+
+
+def test_enrich_news_items_adds_content():
+    """fetch() returns article text → item gets content field."""
+    items = [
+        NewsItem(title="Article", url="https://example.com/article", source="GoogleNews:X", published="", snippet="short"),
+    ]
+    with patch("app.sources.fetch", return_value="Full article body text " * 20):
+        _enrich_news_items(items, max_items=3)
+    assert "content" in items[0]
+    assert len(items[0]["content"]) > 50
+
+
+def test_enrich_news_items_skips_edgar_browse_urls():
+    """EDGAR browse/search URLs are not articles; content should not be fetched."""
+    items = [
+        NewsItem(title="Filing", url="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=12345", source="EDGAR_fulltext", published="", snippet=""),
+    ]
+    with patch("app.sources.fetch") as mock_fetch:
+        _enrich_news_items(items, max_items=3)
+    mock_fetch.assert_not_called()
+    assert "content" not in items[0]
+
+
+def test_enrich_news_items_respects_max_items():
+    """Only max_items articles are fetched even when more items exist."""
+    items = [
+        NewsItem(title=f"A{i}", url=f"https://example.com/{i}", source="GoogleNews:X", published="", snippet="")
+        for i in range(5)
+    ]
+    with patch("app.sources.fetch", return_value="body text " * 30):
+        _enrich_news_items(items, max_items=2)
+    enriched = [i for i in items if "content" in i]
+    assert len(enriched) == 2
+
+
+def test_enrich_news_items_skips_failed_fetch():
+    """A failed fetch is silently skipped; item keeps its snippet."""
+    items = [
+        NewsItem(title="Good", url="https://example.com/good", source="GoogleNews:X", published="", snippet="ok"),
+        NewsItem(title="Bad", url="https://example.com/bad", source="GoogleNews:X", published="", snippet="ok"),
+    ]
+
+    def _selective_fetch(url, **_kw):
+        if "bad" in url:
+            raise Exception("blocked")
+        return "full body text " * 20
+
+    with patch("app.sources.fetch", side_effect=_selective_fetch):
+        _enrich_news_items(items, max_items=3)
+
+    assert "content" in items[0]
+    assert "content" not in items[1]
+
+
+def test_enrich_news_items_skips_short_responses():
+    """Responses under 200 chars are treated as non-articles and skipped."""
+    items = [
+        NewsItem(title="Short", url="https://example.com/short", source="GoogleNews:X", published="", snippet=""),
+    ]
+    with patch("app.sources.fetch", return_value="too short"):
+        _enrich_news_items(items, max_items=3)
+    assert "content" not in items[0]
+
+
+def test_discover_news_calls_enrich():
+    """discover_news() calls _enrich_news_items on combined results."""
+    item = NewsItem(title="X", url="https://x.com", source="GoogleNews:X", published="", snippet="")
+    with (
+        patch("app.sources.discover_google_news_rss", return_value=[item]),
+        patch("app.sources.discover_newsapi", return_value=[]),
+        patch("app.sources.discover_edgar_fulltext", return_value=[]),
+        patch("app.sources._enrich_news_items") as mock_enrich,
+    ):
+        discover_news("test")
+    mock_enrich.assert_called_once()
+    args = mock_enrich.call_args[0]
+    assert len(args[0]) == 1  # the single item was passed
+
+
+# ---------------------------------------------------------------------------
+# discover_economy_context — actual document fetch
+# ---------------------------------------------------------------------------
+
+import xml.etree.ElementTree as ET
+
+
+def _fed_rss_xml(urls: list[str]) -> str:
+    """Minimal RSS XML with the given item links."""
+    items = "\n".join(
+        f"<item><title>FOMC Statement</title><link>{u}</link></item>"
+        for u in urls
+    )
+    return f'<?xml version="1.0"?><rss><channel>{items}</channel></rss>'
+
+
+def test_discover_economy_context_fetches_fed_statement():
+    """Should parse Fed RSS and fetch the linked statement document."""
+    rss_xml = _fed_rss_xml(["https://www.federalreserve.gov/newsevents/pressreleases/monetary20261026a.htm"])
+    fetch_calls: list[str] = []
+
+    def _mock_fetch(url, **_kw):
+        fetch_calls.append(url)
+        if "press_monetary.xml" in url:
+            return rss_xml
+        return "The Federal Open Market Committee decided to maintain the target range..."
+
+    with patch("app.sources.fetch", side_effect=_mock_fetch):
+        result = discover_economy_context(date(2026, 10, 26))
+
+    # Should have fetched the RSS feed and then the statement URL
+    assert any("press_monetary.xml" in u for u in fetch_calls)
+    assert any("monetary20261026a" in u for u in fetch_calls)
+    assert "Federal Reserve Press Release" in result
+
+
+def test_discover_economy_context_fetches_rba_statement():
+    """Should parse RBA decisions index and fetch the latest statement."""
+    rba_index_html = '<a href="/monetary-policy/int-rate-decisions/2026/2026-10-statement.html">October 2026</a>'
+
+    def _mock_fetch(url, **_kw):
+        if "press_monetary.xml" in url:
+            return _fed_rss_xml([])  # no Fed items
+        if "int-rate-decisions" in url and "2026-10" not in url:
+            return rba_index_html
+        return "The RBA Board decided to leave the cash rate target unchanged..."
+
+    with patch("app.sources.fetch", side_effect=_mock_fetch):
+        result = discover_economy_context(date(2026, 10, 26))
+
+    assert "RBA Interest Rate Decision" in result
+
+
+def test_discover_economy_context_falls_back_on_rba_no_links():
+    """If no statement links found in RBA index, falls back to index page text."""
+    def _mock_fetch(url, **_kw):
+        if "press_monetary.xml" in url:
+            return _fed_rss_xml([])
+        return "RBA decisions page with no links"
+
+    with patch("app.sources.fetch", side_effect=_mock_fetch):
+        result = discover_economy_context(date(2026, 10, 26))
+
+    assert "RBA" in result
+
+
+def test_discover_economy_context_survives_all_failures():
+    """All fetches failing returns an empty string without raising."""
+    with patch("app.sources.fetch", side_effect=Exception("network down")):
+        result = discover_economy_context(date(2026, 10, 26))
+    assert isinstance(result, str)

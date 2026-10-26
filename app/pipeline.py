@@ -27,7 +27,14 @@ from app.finance import to_usd
 from app import llm
 from app.prompts import format_dossier_for_prompt
 from app.report import ReportData, save_report
-from app.sources import RawDeal, discover_all, discover_economy_context, discover_markets_context, discover_news
+from app.sources import (
+    RawDeal,
+    discover_all,
+    discover_economy_context,
+    discover_market_figures,
+    discover_markets_context,
+    discover_news,
+)
 from app.verify import verify_claim_groups
 
 logger = logging.getLogger(__name__)
@@ -247,6 +254,13 @@ def _write_market_reports(date_str: str) -> list[ReportData]:
         logger.warning("Markets context fetch failed: %s", exc)
         markets_ctx = {}
 
+    # Stage 1 (cont.): fetch structured market figures for cross-verification
+    try:
+        market_figures = discover_market_figures()
+    except Exception as exc:
+        logger.warning("Market figures fetch failed: %s", exc)
+        market_figures = {}
+
     # Per-column configuration: (report_type, writer_fn, label, primary_ctx, news_query)
     columns = [
         ("economy",     llm.write_economy_report,     "Economy",
@@ -274,17 +288,24 @@ def _write_market_reports(date_str: str) -> list[ReportData]:
             raw_texts = [(f"{label} context", ctx)] if ctx else []
             dossier = build_market_dossier(report_type, date_str, raw_texts, {}, news_items=news_items)
 
-            # Stage 3: Verify — market context is unstructured text; no claim groups
-            verify_result = verify_claim_groups({})
+            # Stage 3: Verify — use structured figures for this column where available;
+            # economy has no numeric claim groups (prose only)
+            claim_groups = market_figures.get(report_type, {})
+            verify_result = verify_claim_groups(claim_groups)
 
             # Stage 4: Style
             primary_doc, secondary_sources = format_dossier_for_prompt(dossier)
 
             # Stage 5: Synthesise
+            verified_facts_str = (
+                json.dumps(verify_result["verified_facts"], indent=2)
+                if verify_result["verified_facts"] else ""
+            )
             if label == "Economy":
-                report = writer_fn(primary_doc, secondary_sources, date_str)
+                report = writer_fn(primary_doc, secondary_sources, date_str,
+                                   verified_facts=verified_facts_str)
             else:
-                report = writer_fn(primary_doc, date_str)
+                report = writer_fn(primary_doc, date_str, verified_facts=verified_facts_str)
 
             report.verification_log = verify_result["verification_log"]
             reports.append(report)

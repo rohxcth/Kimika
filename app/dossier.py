@@ -180,10 +180,10 @@ def build_deal_dossier(
     # Append news items as secondary commentary chunks
     for item in (news_items or []):
         try:
-            snippet = item.get("snippet", "") or ""
+            # Prefer full article content if enriched; fall back to snippet
+            body = item.get("content") or item.get("snippet", "") or ""
             title = item.get("title", "") or ""
-            # Combine title + snippet as the chunk text
-            text = f"{title}\n{snippet}".strip()
+            text = f"{title}\n{body}".strip()
             if not text:
                 continue
             chunk = DocChunk(

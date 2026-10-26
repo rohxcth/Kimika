@@ -338,6 +338,7 @@ def test_pipeline_run_writes_files(tmp_path, monkeypatch):
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.discover_economy_context", return_value=""),
         patch("app.pipeline.discover_markets_context", return_value={}),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.llm.write_ma_report", return_value=stub_report),
         patch("app.pipeline.llm.write_economy_report",     return_value=_mkt_stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=_mkt_stubs["equities"]),
@@ -364,6 +365,7 @@ def test_pipeline_run_no_deals(tmp_path, monkeypatch):
         patch("app.pipeline.llm.classify_deals", return_value=[]),
         patch("app.pipeline.discover_economy_context", return_value=""),
         patch("app.pipeline.discover_markets_context", return_value={}),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=_stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=_stubs["equities"]),
@@ -396,6 +398,7 @@ def test_pipeline_run_fetch_failure_continues(tmp_path, monkeypatch):
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.discover_economy_context", return_value=""),
         patch("app.pipeline.discover_markets_context", return_value={}),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.llm.write_ma_report", return_value=stub_rep),
         patch("app.pipeline.llm.write_economy_report",     return_value=_mkt_stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=_mkt_stubs["equities"]),
@@ -452,6 +455,7 @@ def test_write_market_reports_returns_five(tmp_path):
             "equities": "eq ctx", "commodities": "com ctx",
             "bonds": "bon ctx", "currencies": "fx ctx",
         }),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
@@ -480,6 +484,7 @@ def test_write_market_reports_skips_failed_writer(tmp_path):
         patch("app.pipeline.discover_markets_context", return_value={
             "equities": "", "commodities": "", "bonds": "", "currencies": "",
         }),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
@@ -575,6 +580,7 @@ def test_market_reports_no_stub_log(tmp_path):
         patch("app.pipeline.discover_markets_context", return_value={
             "equities": "eq", "commodities": "com", "bonds": "bon", "currencies": "fx",
         }),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
@@ -604,6 +610,7 @@ def test_pipeline_run_no_deals_still_writes_market_reports(tmp_path, monkeypatch
         patch("app.pipeline.llm.classify_deals", return_value=[]),
         patch("app.pipeline.discover_economy_context", return_value=""),
         patch("app.pipeline.discover_markets_context", return_value={}),
+        patch("app.pipeline.discover_market_figures", return_value={}),
         patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
@@ -617,3 +624,47 @@ def test_pipeline_run_no_deals_still_writes_market_reports(tmp_path, monkeypatch
 
     # full_reports counts all saved reports; 5 market reports should be included
     assert summary["full_reports"] == 5
+
+
+# ---------------------------------------------------------------------------
+# market_figures flows through to verify and then to LLM writers
+# ---------------------------------------------------------------------------
+
+def test_write_market_reports_passes_verified_facts_to_writer(tmp_path):
+    """When discover_market_figures returns figures, verify runs and verified_facts
+    is passed as a non-empty string to the LLM writer."""
+    from unittest.mock import call as _call
+
+    real_figures = {
+        "currencies": {
+            "audusd_rate": {"yfinance": 0.645, "FMP": 0.6451},
+        },
+        "commodities": {},
+        "bonds": {},
+        "equities": {},
+    }
+    stubs = {rt: _stub_market(rt) for rt in
+             ("economy", "equities", "commodities", "bonds", "currencies")}
+
+    currencies_writer = MagicMock(return_value=stubs["currencies"])
+
+    with (
+        patch("app.pipeline.discover_economy_context", return_value=""),
+        patch("app.pipeline.discover_markets_context", return_value={
+            "currencies": "FX data", "equities": "", "commodities": "", "bonds": "",
+        }),
+        patch("app.pipeline.discover_market_figures", return_value=real_figures),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  currencies_writer),
+    ):
+        _write_market_reports(DATE_STR)
+
+    # currencies writer should have been called with verified_facts containing audusd_rate
+    assert currencies_writer.called
+    _, kwargs = currencies_writer.call_args
+    vf = kwargs.get("verified_facts", "")
+    assert "audusd_rate" in vf

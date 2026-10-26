@@ -277,3 +277,35 @@ def test_word_count_targets_all_report_types_present():
     for rt in ("ma_full", "ecm", "dcm", "economy", "equities", "commodities", "bonds", "currencies"):
         assert rt in WORD_COUNT_TARGETS
         assert WORD_COUNT_TARGETS[rt] >= 2000
+
+
+def test_build_deal_dossier_news_item_content_preferred_over_snippet():
+    """When a NewsItem has a content field, it should be used instead of snippet."""
+    from app.sources import NewsItem
+    item = NewsItem(
+        title="Rich Article",
+        url="https://example.com",
+        source="GoogleNews:Reuters",
+        published="2026-10-26",
+        snippet="short snippet",
+        content="Full article body text with much more detail about the deal terms.",
+    )
+    dossier = build_deal_dossier("Test Deal", "ma_full", "2026-10-26", [], news_items=[item])
+    chunk = dossier["documents"][0]
+    assert "Full article body text" in chunk["text"]
+    assert "short snippet" not in chunk["text"]
+
+
+def test_build_deal_dossier_news_item_falls_back_to_snippet_when_no_content():
+    """When content is absent, snippet is used as before."""
+    from app.sources import NewsItem
+    item = NewsItem(
+        title="Plain Item",
+        url="https://example.com",
+        source="GoogleNews:Reuters",
+        published="2026-10-26",
+        snippet="only snippet available",
+    )
+    dossier = build_deal_dossier("Test Deal", "ma_full", "2026-10-26", [], news_items=[item])
+    chunk = dossier["documents"][0]
+    assert "only snippet available" in chunk["text"]

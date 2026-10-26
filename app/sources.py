@@ -38,16 +38,23 @@ class RawDeal(TypedDict):
     extra: dict
 
 
-class NewsItem(TypedDict):
-    """Lightweight news/commentary item returned by wide-search sources.
-
-    Used in the dossier pooling stage to gather context for report synthesis.
-    """
+class _NewsItemRequired(TypedDict):
     title: str
     url: str
     source: str    # e.g. "GoogleNews:Reuters" | "NewsAPI:Bloomberg" | "EDGAR_fulltext"
     published: str # date string as returned by the source
     snippet: str   # brief description or excerpt (max 500 chars)
+
+
+class NewsItem(_NewsItemRequired, total=False):
+    """Lightweight news/commentary item returned by wide-search sources.
+
+    Used in the dossier pooling stage to gather context for report synthesis.
+    The optional ``content`` field is populated by _enrich_news_items() after
+    discover_news() collects all items; it holds full article body text so the
+    dossier has more than just headline snippets.
+    """
+    content: str   # full article body fetched from the URL; preferred over snippet
 
 
 # ---------------------------------------------------------------------------
@@ -302,8 +309,12 @@ def _rns_filing_type(headline: str, category: str) -> str:
 # ---------------------------------------------------------------------------
 
 # Public URLs - no login required
-_FED_PRESS_RELEASES_URL = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+_FED_MONETARY_RSS = "https://www.federalreserve.gov/feeds/press_monetary.xml"
 _RBA_DECISIONS_URL = "https://www.rba.gov.au/monetary-policy/int-rate-decisions/"
+# Regex to find RBA decision statement links in the decisions index HTML
+_RBA_STATEMENT_LINK_RE = _re.compile(
+    r'href="(/monetary-policy/int-rate-decisions/\d{4}/[^"]+\.html)"'
+)
 _FRED_SERIES_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 # Key FRED series: Fed funds rate, CPI (all items), unemployment, 10y Treasury
@@ -350,8 +361,11 @@ def discover_economy_context(target_date: date) -> str:
     """Fetch macro context for the Economy & Markets report.
 
     Returns a trimmed string combining:
-      - Federal Reserve FOMC calendar / press release page (public HTML)
-      - RBA interest rate decisions page (public HTML)
+      - Latest Federal Reserve monetary press release (FOMC statement or minutes),
+        fetched via the Fed's monetary press releases RSS feed. This gives the
+        actual statement text, not just the calendar index page.
+      - Latest RBA interest rate decision statement, found by parsing the
+        decisions index page and following the link to the most recent statement.
       - FRED data for key US series (requires FRED_API_KEY in env; skipped if absent)
 
     A failure on any individual source is logged and skipped; the others still run.
@@ -361,19 +375,45 @@ def discover_economy_context(target_date: date) -> str:
     trim = cfg["pipeline"]["doc_trim_chars"]
     segments: list[str] = []
 
-    # 1. Federal Reserve FOMC page
+    # 1. Federal Reserve — parse monetary press releases RSS to get latest statement URLs,
+    # then fetch the actual statement document (not the calendar index page).
     try:
-        html = fetch(_FED_PRESS_RELEASES_URL)
-        segments.append(f"=== Federal Reserve FOMC Calendar ===\n{html[:3000]}")
-        logger.info("Economy context: fetched Fed page (%d chars)", len(html))
+        xml_text = fetch(_FED_MONETARY_RSS)
+        root = ET.fromstring(xml_text)
+        channel = root.find("channel")
+        statement_urls: list[str] = []
+        if channel is not None:
+            for item in channel.findall("item")[:3]:
+                link = (item.findtext("link") or "").strip()
+                if link:
+                    statement_urls.append(link)
+        for url in statement_urls[:2]:
+            try:
+                doc = fetch(url)
+                segments.append(f"=== Federal Reserve Press Release ({url}) ===\n{doc[:5000]}")
+                logger.info("Economy context: fetched Fed statement %s (%d chars)", url, len(doc))
+            except Exception as exc:
+                logger.warning("Economy context: Fed statement fetch failed %s: %s", url, exc)
     except Exception as exc:
-        logger.warning("Economy context: Fed fetch failed: %s", exc)
+        logger.warning("Economy context: Fed RSS fetch failed: %s", exc)
 
-    # 2. RBA interest rate decisions
+    # 2. RBA — parse decisions index page to find the latest statement link, then fetch it.
     try:
-        html = fetch(_RBA_DECISIONS_URL)
-        segments.append(f"=== RBA Interest Rate Decisions ===\n{html[:3000]}")
-        logger.info("Economy context: fetched RBA page (%d chars)", len(html))
+        index_html = fetch(_RBA_DECISIONS_URL)
+        matches = _RBA_STATEMENT_LINK_RE.findall(index_html)
+        if matches:
+            latest_path = matches[0]  # first match = most recent (page order)
+            rba_url = f"https://www.rba.gov.au{latest_path}"
+            try:
+                doc = fetch(rba_url)
+                segments.append(f"=== RBA Interest Rate Decision ({rba_url}) ===\n{doc[:5000]}")
+                logger.info("Economy context: fetched RBA statement %s (%d chars)", rba_url, len(doc))
+            except Exception as exc:
+                logger.warning("Economy context: RBA statement fetch failed: %s", exc)
+        else:
+            # Fallback: use the index page itself (less useful but better than nothing)
+            segments.append(f"=== RBA Interest Rate Decisions ===\n{index_html[:3000]}")
+            logger.info("Economy context: RBA no statement links found; using index page")
     except Exception as exc:
         logger.warning("Economy context: RBA fetch failed: %s", exc)
 
@@ -389,7 +429,6 @@ def discover_economy_context(target_date: date) -> str:
                 )
                 obs = data.get("observations", [])
                 if obs:
-                    # Most recent 3 observations
                     rows = "; ".join(
                         f"{o['date']}: {o['value']}"
                         for o in obs if o.get("value") not in (".", None)
@@ -409,6 +448,107 @@ def discover_economy_context(target_date: date) -> str:
 # ---------------------------------------------------------------------------
 # Market data context discovery (yfinance + FMP)
 # ---------------------------------------------------------------------------
+
+# Registry of verifiable market figures.
+# Each entry: figure_name → (yfinance_ticker, fmp_symbol_or_None, section)
+# figure_name is chosen so infer_figure_type() in verify.py assigns the right
+# tolerance automatically: "audusd_rate" → fx, "us_10y_yield_pct" → yield, etc.
+_VERIFIABLE_FIGURES: dict[str, tuple[str, str | None, str]] = {
+    # FX — yfinance + FMP cross-verify (0.5% tolerance)
+    "audusd_rate":        ("AUDUSD=X",  "AUDUSD",   "currencies"),
+    "eurusd_rate":        ("EURUSD=X",  "EURUSD",   "currencies"),
+    "gbpusd_rate":        ("GBPUSD=X",  "GBPUSD",   "currencies"),
+    # Commodities — yfinance + FMP cross-verify (1% tolerance)
+    "gold_usd_oz":        ("GC=F",      "GCUSD",    "commodities"),
+    "wti_crude_usd_bbl":  ("CL=F",      "CLUSD",    "commodities"),
+    # Bonds — yfinance only; ^TNX returns yield in % (e.g. 4.38 = 4.38%)
+    "us_10y_yield_pct":   ("^TNX",      None,       "bonds"),
+    "us_30y_yield_pct":   ("^TYX",      None,       "bonds"),
+    # Equities — yfinance only; index level (price tolerance)
+    "sp500_level":        ("^GSPC",     None,       "equities"),
+    "asx200_level":       ("^AXJO",     None,       "equities"),
+    "nasdaq100_level":    ("^NDX",      None,       "equities"),
+}
+
+
+def discover_market_figures() -> dict[str, dict[str, dict[str, float]]]:
+    """Fetch structured market figures from multiple sources for cross-verification.
+
+    Returns a nested dict: section → {figure_name → {source_name: value}}.
+    This is the structured counterpart to discover_markets_context() — while
+    that function returns prose strings for the LLM, this returns numbers
+    ready for verify_claim_groups() in pipeline.py.
+
+    Cross-verified figures (≥2 sources, Verified/Resolved status expected):
+      currencies:  AUD/USD, EUR/USD, GBP/USD via yfinance + FMP
+      commodities: Gold (USD/oz), WTI crude (USD/bbl) via yfinance + FMP
+
+    Single-source figures (honest Single-source status):
+      bonds:    US 10y and 30y Treasury yields via yfinance
+      equities: S&P 500, ASX 200, Nasdaq 100 levels via yfinance
+
+    A failed fetch is logged and omitted; the figure still appears with
+    whatever sources succeeded — never crashes the pipeline.
+    """
+    import os
+
+    # Step 1: yfinance prices
+    yf_figures: dict[str, float] = {}
+    try:
+        import yfinance as _yf
+        for fig_name, (yf_ticker, _, _section) in _VERIFIABLE_FIGURES.items():
+            try:
+                hist = _yf.Ticker(yf_ticker).history(period="5d")
+                if not hist.empty:
+                    yf_figures[fig_name] = float(hist["Close"].iloc[-1])
+            except Exception as exc:
+                logger.debug("market_figures: yfinance %s failed: %s", yf_ticker, exc)
+    except ImportError:
+        logger.info("market_figures: yfinance not installed")
+
+    # Step 2: FMP prices (only for figures that have an FMP symbol)
+    fmp_figures: dict[str, float] = {}
+    fmp_key = os.environ.get("FMP_API_KEY", "")
+    if fmp_key:
+        fmp_symbol_to_fig: dict[str, str] = {
+            fmp_sym: fig_name
+            for fig_name, (_yf_t, fmp_sym, _section) in _VERIFIABLE_FIGURES.items()
+            if fmp_sym is not None
+        }
+        if fmp_symbol_to_fig:
+            try:
+                sym_str = ",".join(fmp_symbol_to_fig.keys())
+                data = fetch_json(
+                    f"{cfg['fmp']['base_url']}/quote/{sym_str}?apikey={fmp_key}"
+                )
+                if isinstance(data, list):
+                    for q in data:
+                        sym = q.get("symbol", "")
+                        price = q.get("price")
+                        if sym in fmp_symbol_to_fig and price is not None:
+                            fmp_figures[fmp_symbol_to_fig[sym]] = float(price)
+            except Exception as exc:
+                logger.warning("market_figures: FMP batch quote failed: %s", exc)
+
+    # Step 3: Assemble into per-section claim groups
+    sections: dict[str, dict[str, dict[str, float]]] = {
+        "equities": {}, "commodities": {}, "bonds": {}, "currencies": {},
+    }
+    for fig_name, (_yf_t, _fmp_sym, section) in _VERIFIABLE_FIGURES.items():
+        readings: dict[str, float] = {}
+        if fig_name in yf_figures:
+            readings["yfinance"] = yf_figures[fig_name]
+        if fig_name in fmp_figures:
+            readings["FMP"] = fmp_figures[fig_name]
+        if readings:
+            sections[section][fig_name] = readings
+
+    logger.info(
+        "market_figures: %s",
+        ", ".join(f"{s}={len(v)}" for s, v in sections.items()),
+    )
+    return sections
+
 
 def _fetch_yfinance_tickers(tickers: dict[str, str]) -> str:
     """Fetch latest price + 1-day change for a dict of {ticker: label}.
@@ -691,12 +831,42 @@ def discover_edgar_fulltext(query: str, max_results: int = 10) -> list[NewsItem]
 # Combined news discovery — all wide-search sources for a query
 # ---------------------------------------------------------------------------
 
+def _enrich_news_items(items: list[NewsItem], max_items: int = 3) -> None:
+    """Fetch full article text for the top ``max_items`` news items in-place.
+
+    Skips EDGAR browse-page items (not articles) and any URL that fetch()
+    rejects (blocked domains are handled by app/fetch.py automatically).
+    A failed fetch is logged and skipped — the item keeps its snippet.
+
+    Fetching 3 articles adds at most 3 extra HTTP calls per discover_news()
+    invocation, keeping request volume low.
+    """
+    trim = cfg["pipeline"]["doc_trim_chars"]
+    fetched = 0
+    for item in items:
+        if fetched >= max_items:
+            break
+        url = item.get("url", "")
+        # Skip EDGAR browse/search pages — they're filing indexes, not article text
+        if "sec.gov/cgi-bin" in url or "efts.sec.gov" in url:
+            continue
+        try:
+            text = fetch(url)
+            if text and len(text) > 200:
+                item["content"] = text[:trim]
+                fetched += 1
+                logger.debug("Enriched news item: %s (%d chars)", item.get("title", "")[:60], len(text))
+        except Exception as exc:
+            logger.debug("News enrichment failed for %s: %s", url[:80], exc)
+
+
 def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem]:
     """Pool news and commentary from all wide-search sources for a query.
 
     Combines Google News RSS + NewsAPI + EDGAR full-text. A failure in any
     single source is logged and skipped; others still run.
-    Results are deduplicated by URL.
+    Results are deduplicated by URL, then the top 3 are enriched with full
+    article text via _enrich_news_items().
     """
     results: list[NewsItem] = []
     seen_urls: set[str] = set()
@@ -714,6 +884,9 @@ def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem
                     results.append(item)
         except Exception as exc:
             logger.error("%s news discovery raised unexpectedly: %s", name, exc)
+
+    # Enrich top 3 items with full article content
+    _enrich_news_items(results, max_items=3)
 
     logger.info("discover_news: %d unique items for %r", len(results), query)
     return results
