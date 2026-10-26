@@ -35,6 +35,7 @@ from app.sources import (
     discover_market_figures,
     discover_markets_context,
     discover_news,
+    fetch_edgar_document,
 )
 from app.verify import verify_claim_groups
 
@@ -158,9 +159,12 @@ def _research_write_verify(deal: RawDeal, date_str: str) -> ReportData | None:
     source_label = deal.get("source") or "primary filing"
     if url:
         try:
-            raw = fetch(url)
-            # Strip nav/script/footer boilerplate so the LLM sees filing content only
-            primary_doc_text = extract_text(raw)[:_TRIM_CHARS]
+            if "index.json" in url:
+                # EDGAR filing: fetch the actual 8-K body or Ex. 99.1 press release
+                primary_doc_text = fetch_edgar_document(url)
+            else:
+                raw = fetch(url)
+                primary_doc_text = extract_text(raw)[:_TRIM_CHARS]
         except Exception as exc:
             logger.warning("Could not fetch primary doc for %s (%s): %s",
                            deal.get("title"), url, exc)
@@ -329,7 +333,10 @@ def _write_market_reports(date_str: str) -> list[ReportData]:
                 report = writer_fn(primary_doc, secondary_sources, date_str,
                                    verified_facts=verified_facts_str)
             else:
-                report = writer_fn(primary_doc, date_str, verified_facts=verified_facts_str)
+                # secondary_sources carries the enriched news items for this column
+                report = writer_fn(primary_doc, date_str,
+                                   secondary_sources=secondary_sources,
+                                   verified_facts=verified_facts_str)
 
             report.verification_log = verify_result["verification_log"]
             reports.append(report)

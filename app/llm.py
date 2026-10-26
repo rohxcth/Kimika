@@ -526,39 +526,47 @@ def write_economy_report(
     )
 
 
-def write_equities_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
+def write_equities_report(
+    context: str, date_str: str, verified_facts: str = "", secondary_sources: str = "",
+) -> ReportData:
     """Write the daily Equities column report. Uses Flash."""
     return _write_market_report(
         EQUITIES_SECTION, context, date_str,
         report_type="equities", section_key="1_equities", title_prefix="Equities",
-        verified_facts=verified_facts,
+        secondary_sources=secondary_sources, verified_facts=verified_facts,
     )
 
 
-def write_commodities_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
+def write_commodities_report(
+    context: str, date_str: str, verified_facts: str = "", secondary_sources: str = "",
+) -> ReportData:
     """Write the daily Commodities column report. Uses Flash."""
     return _write_market_report(
         COMMODITIES_SECTION, context, date_str,
         report_type="commodities", section_key="1_commodities", title_prefix="Commodities",
-        verified_facts=verified_facts,
+        secondary_sources=secondary_sources, verified_facts=verified_facts,
     )
 
 
-def write_bonds_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
+def write_bonds_report(
+    context: str, date_str: str, verified_facts: str = "", secondary_sources: str = "",
+) -> ReportData:
     """Write the daily Bonds column report. Uses Flash."""
     return _write_market_report(
         BONDS_SECTION, context, date_str,
         report_type="bonds", section_key="1_bonds", title_prefix="Bonds",
-        verified_facts=verified_facts,
+        secondary_sources=secondary_sources, verified_facts=verified_facts,
     )
 
 
-def write_currencies_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
+def write_currencies_report(
+    context: str, date_str: str, verified_facts: str = "", secondary_sources: str = "",
+) -> ReportData:
     """Write the daily Currencies column report. Uses Flash."""
     return _write_market_report(
         CURRENCIES_SECTION, context, date_str,
         report_type="currencies", section_key="1_currencies", title_prefix="Currencies",
-        verified_facts=verified_facts,
+        secondary_sources=secondary_sources, verified_facts=verified_facts,
     )
 
 

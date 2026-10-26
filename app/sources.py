@@ -19,7 +19,7 @@ from datetime import date, datetime
 from typing import TypedDict
 
 from app.config import cfg
-from app.fetch import extract_text, fetch, fetch_json
+from app.fetch import BlockedDomainError, extract_text, fetch, fetch_json, resolve_redirect
 
 logger = logging.getLogger(__name__)
 
@@ -153,13 +153,93 @@ def discover_edgar(target_date: date) -> list[RawDeal]:
 
 
 def _edgar_filing_url(hit_id: str, src: dict) -> str:
-    """Build the EDGAR filing viewer URL from the hit metadata."""
-    # hit_id is typically "cik/accession-number"
+    """Build the EDGAR filing index URL from EFTS hit metadata.
+
+    hit_id format from EFTS: "{CIK}/{accession-with-dashes}"
+    e.g. "0001018724/0001018724-24-000005"
+
+    Returns the machine-readable filing index JSON URL:
+    https://www.sec.gov/Archives/edgar/data/{CIK}/{accession-no-dashes}/index.json
+
+    This is then fetched by the pipeline; _fetch_edgar_document() parses it
+    to find and retrieve the actual 8-K body or Ex. 99.1 press release.
+    """
+    if "/" in hit_id:
+        cik_part, accession_part = hit_id.split("/", 1)
+        accession_no_dashes = accession_part.replace("-", "")
+        return (
+            f"https://www.sec.gov/Archives/edgar/data/"
+            f"{cik_part}/{accession_no_dashes}/index.json"
+        )
+    # Fallback: use CIK from source dict for company-level filing list
     cik = src.get("cik", "")
-    if cik and hit_id:
-        accession = hit_id.replace("-", "").replace("/", "")
-        return f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=8-K"
-    return "https://www.sec.gov/cgi-bin/browse-edgar"
+    if cik:
+        return f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=8-K&dateb=&owner=include&count=5"
+    return ""
+
+
+def fetch_edgar_document(index_url: str) -> str:
+    """Fetch the actual filing document text from an EDGAR index.json URL.
+
+    Parses the filing index to find the best document in priority order:
+    1. Ex. 99.1 (press release — contains the deal announcement text)
+    2. The main 8-K form document
+    3. Any .htm or .txt document in the filing
+
+    Returns extracted clean text, or empty string on failure.
+    This is the correct way to get US filing content — the index.json URL
+    points to a specific filing, not a company search page.
+    """
+    if not index_url or "index.json" not in index_url:
+        # Not an index URL — fetch and extract directly (best-effort)
+        try:
+            return extract_text(fetch(index_url))[:cfg["pipeline"]["doc_trim_chars"]]
+        except Exception:
+            return ""
+
+    base_url = index_url.replace("/index.json", "")
+    try:
+        index = fetch_json(index_url)
+        time.sleep(cfg["edgar"]["rate_limit_seconds"])
+    except Exception as exc:
+        logger.warning("EDGAR index.json fetch failed %s: %s", index_url, exc)
+        return ""
+
+    files = index.get("files", [])
+    if not files:
+        return ""
+
+    # Priority: Ex-99.1 press release > 8-K main doc > any htm/txt
+    def _priority(f: dict) -> int:
+        desc = (f.get("description") or "").lower()
+        name = (f.get("name") or "").lower()
+        if "ex-99.1" in desc or "exhibit 99.1" in desc or "press release" in desc:
+            return 0
+        if f.get("type") in ("8-K", "8-K/A"):
+            return 1
+        if name.endswith(".htm") or name.endswith(".html"):
+            return 2
+        if name.endswith(".txt"):
+            return 3
+        return 9
+
+    candidates = sorted(files, key=_priority)
+    for f in candidates[:3]:   # try up to 3 docs; stop on first success
+        name = f.get("name", "")
+        if not name:
+            continue
+        doc_url = f"{base_url}/{name}"
+        try:
+            raw = fetch(doc_url)
+            text = extract_text(raw)
+            if len(text) > 200:
+                logger.info("EDGAR document fetched: %s (%d chars)", doc_url, len(text))
+                return text[:cfg["pipeline"]["doc_trim_chars"]]
+            time.sleep(cfg["edgar"]["rate_limit_seconds"])
+        except Exception as exc:
+            logger.debug("EDGAR doc fetch failed %s: %s", doc_url, exc)
+
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -789,6 +869,91 @@ def discover_google_news_rss(query: str, max_results: int = 20) -> list[NewsItem
 
 
 # ---------------------------------------------------------------------------
+# Wire press releases — PR Newswire and BusinessWire RSS (no key, direct URLs)
+# ---------------------------------------------------------------------------
+
+# Financial-news category feeds from the two main US press release wire services.
+# Unlike Google News RSS, these return direct article URLs (not redirects).
+# Company press releases on these wires are primary sources for deal announcements.
+_PRNEWSWIRE_RSS = "https://www.prnewswire.com/rss/news-releases-list.rss?category=FIN"
+_BUSINESSWIRE_RSS = "https://www.businesswire.com/rss/home/?rss=G7"
+
+
+def _parse_wire_rss(xml_text: str, source_prefix: str, query: str, max_results: int) -> list[NewsItem]:
+    """Parse a PR Newswire or BusinessWire RSS feed and filter by query terms."""
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError as exc:
+        logger.warning("%s RSS: XML parse error: %s", source_prefix, exc)
+        return []
+
+    channel = root.find("channel")
+    if channel is None:
+        return []
+
+    query_terms = [t.lower() for t in query.split() if len(t) > 3]
+    items: list[NewsItem] = []
+    for item in channel.findall("item"):
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        pub_date = (item.findtext("pubDate") or "").strip()
+        description = _strip_html(item.findtext("description") or "")[:500]
+
+        if not title or not link:
+            continue
+        # Relevance filter: skip items with no query term in title or description
+        combined = (title + " " + description).lower()
+        if query_terms and not any(t in combined for t in query_terms):
+            continue
+
+        items.append(NewsItem(
+            title=title,
+            url=link,
+            source=f"{source_prefix}:{title[:30]}",
+            published=pub_date,
+            snippet=description,
+        ))
+        if len(items) >= max_results:
+            break
+
+    return items
+
+
+def discover_prnewswire(query: str, max_results: int = 10) -> list[NewsItem]:
+    """Search PR Newswire financial RSS for press releases matching query.
+
+    Returns direct article URLs — no Google redirect. Primary source for
+    US company deal announcements, ECM pricing, and regulatory approvals.
+    Paraphrase only; never reproduce full release text verbatim.
+    """
+    try:
+        xml_text = fetch(_PRNEWSWIRE_RSS)
+        items = _parse_wire_rss(xml_text, "PRNewswire", query, max_results)
+        logger.info("PR Newswire: %d relevant items for %r", len(items), query)
+        return items
+    except Exception as exc:
+        logger.warning("PR Newswire RSS failed for %r: %s", query, exc)
+        return []
+
+
+def discover_businesswire(query: str, max_results: int = 10) -> list[NewsItem]:
+    """Search BusinessWire financial RSS for press releases matching query.
+
+    Returns direct article URLs — no Google redirect. Complements PR Newswire;
+    many M&A press releases are distributed through BusinessWire rather than PRN.
+    Paraphrase only; never reproduce full release text verbatim.
+    """
+    try:
+        xml_text = fetch(_BUSINESSWIRE_RSS)
+        items = _parse_wire_rss(xml_text, "BusinessWire", query, max_results)
+        logger.info("BusinessWire: %d relevant items for %r", len(items), query)
+        return items
+    except Exception as exc:
+        logger.warning("BusinessWire RSS failed for %r: %s", query, exc)
+        return []
+
+
+# ---------------------------------------------------------------------------
 # Wide web search — NewsAPI (free tier: 100 req/day, requires NEWSAPI_KEY)
 # ---------------------------------------------------------------------------
 
@@ -916,6 +1081,14 @@ def _enrich_news_items(items: list[NewsItem], max_items: int = 5) -> None:
         if "sec.gov/cgi-bin" in url or "efts.sec.gov" in url:
             continue
         try:
+            # Google News RSS links are opaque redirect URLs — resolve to the real
+            # article URL first. A browser User-Agent is required for Google to redirect.
+            if "news.google.com/rss/articles/" in url:
+                try:
+                    url = resolve_redirect(url)
+                except BlockedDomainError:
+                    logger.debug("News enrichment: resolved to blocked domain, skipping %s", url[:80])
+                    continue
             raw = fetch(url)
             clean = extract_text(raw)
             if clean and len(clean) > 200:
@@ -938,9 +1111,11 @@ def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem
     seen_urls: set[str] = set()
 
     sources = [
-        ("GoogleNews", lambda q: discover_google_news_rss(q, max_results_per_source)),
-        ("NewsAPI",    lambda q: discover_newsapi(q, max_results_per_source)),
-        ("EDGAR",      lambda q: discover_edgar_fulltext(q, max_results_per_source // 2)),
+        ("GoogleNews",   lambda q: discover_google_news_rss(q, max_results_per_source)),
+        ("NewsAPI",      lambda q: discover_newsapi(q, max_results_per_source)),
+        ("PRNewswire",   lambda q: discover_prnewswire(q, max_results_per_source // 2)),
+        ("BusinessWire", lambda q: discover_businesswire(q, max_results_per_source // 2)),
+        ("EDGAR",        lambda q: discover_edgar_fulltext(q, max_results_per_source // 2)),
     ]
     for name, fn in sources:
         try:
@@ -965,17 +1140,22 @@ def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem
 def _infer_ticker(deal: RawDeal) -> str | None:
     """Best-effort ticker inference from deal metadata.
 
-    Checks deal["extra"]["ticker"] first (set by the classifier if it found one),
-    then for AU deals tries the company field as an ASX code with .AX suffix
-    (ASX codes are 3–5 uppercase letters). Returns None if nothing plausible found.
+    Checks deal["extra"]["ticker"] first (set by the classifier or ASX discovery),
+    then falls back to the company field for AU deals.
+
+    Finance note: ASX discovery sets extra["ticker"] to the raw ASX code (e.g. "BHP")
+    without the yfinance-required ".AX" suffix. For any AU deal, ".AX" is appended
+    if not already present — yfinance returns US ADR data for bare "BHP" but the
+    correct ASX-listed shares are under "BHP.AX".
     """
-    explicit = (deal.get("extra") or {}).get("ticker", "")
-    if explicit:
-        return str(explicit).strip()
+    explicit = str((deal.get("extra") or {}).get("ticker", "") or "").strip()
     if deal.get("region") == "AU":
-        code = (deal.get("company") or "").strip().upper()
-        if 2 <= len(code) <= 5 and code.isalpha():
-            return f"{code}.AX"
+        code = explicit or (deal.get("company") or "").strip().upper()
+        if code and 2 <= len(code) <= 6:
+            # Ensure .AX suffix for ASX equities — never double-append
+            return code if "." in code else f"{code}.AX"
+    if explicit:
+        return explicit
     return None
 
 
@@ -1030,6 +1210,71 @@ def discover_deal_market_data(deal: RawDeal) -> str:
     if result:
         logger.info("deal market data: fetched price data for %s", deal.get("company", ""))
     return result
+
+
+# ---------------------------------------------------------------------------
+# ASX per-company polling — catch scheme booklets and IERs for ongoing deals
+# ---------------------------------------------------------------------------
+
+_ASX_COMPANY_ANNOUNCEMENTS_URL = (
+    "https://www.asx.com.au/asx/1/company/{ticker}/announcements"
+    "?count=20&market_sensitive=true"
+)
+
+# Announcement headline keywords that indicate a rich secondary document
+_ASX_FOLLOWUP_KEYWORDS = {
+    "scheme booklet", "independent expert", "target's statement",
+    "bidder's statement", "supplementary booklet", "scheme document",
+    "notice of meeting", "proxy",
+}
+
+
+def discover_asx_followup_filings(ticker: str) -> list[RawDeal]:
+    """Poll the ASX per-company announcements feed for scheme booklets and IERs.
+
+    The initial deal announcement arrives via discover_asx(). The rich documents
+    (scheme booklet, Independent Expert's Report, target/bidder statements) are
+    filed as separate ASX announcements weeks later. This function polls the
+    company-specific feed for those follow-up documents.
+
+    Call once per active deal per daily run. Rate-limit: 0.5s between tickers.
+    Returns RawDeal items with url pointing to the ASX PDF document.
+    """
+    ticker = ticker.upper().replace(".AX", "")
+    url = _ASX_COMPANY_ANNOUNCEMENTS_URL.format(ticker=ticker)
+    try:
+        data = fetch_json(url)
+    except Exception as exc:
+        logger.debug("ASX follow-up: fetch failed for %s: %s", ticker, exc)
+        return []
+
+    deals: list[RawDeal] = []
+    announcements = data if isinstance(data, list) else data.get("data", [])
+    for ann in announcements:
+        header = (ann.get("header") or "").lower()
+        if not any(kw in header for kw in _ASX_FOLLOWUP_KEYWORDS):
+            continue
+        doc_url = ann.get("url", "")
+        if not doc_url:
+            continue
+        # Construct full PDF URL if relative
+        if doc_url.startswith("/"):
+            doc_url = f"https://www.asx.com.au{doc_url}"
+        file_date = (ann.get("date") or "")[:10]
+        deals.append(RawDeal(
+            title=ann.get("header", "ASX filing"),
+            url=doc_url,
+            source="ASX_followup",
+            region="AU",
+            filing_type="scheme_booklet",
+            date=file_date,
+            company=ticker,
+            extra={"ticker": ticker, "announcement_id": ann.get("id", "")},
+        ))
+
+    time.sleep(cfg["edgar"]["rate_limit_seconds"])   # reuse EDGAR rate limit
+    logger.info("ASX follow-up: %d scheme/IER docs for %s", len(deals), ticker)
+    return deals
 
 
 # ---------------------------------------------------------------------------

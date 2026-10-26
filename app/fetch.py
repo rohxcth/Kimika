@@ -102,6 +102,36 @@ class BlockedDomainError(ValueError):
 # Public interface
 # ---------------------------------------------------------------------------
 
+def resolve_redirect(url: str, *, timeout: int = 15) -> str:
+    """Follow HTTP redirects and return the final URL without fetching the body.
+
+    Used to resolve Google News RSS item links, which are opaque redirect URLs
+    of the form `https://news.google.com/rss/articles/CBMi...`. A HEAD request
+    with a browser-like User-Agent follows the redirect chain; the final URL
+    (the real article) is returned. The blocklist is applied to the final URL —
+    if it resolves to a blocked domain, BlockedDomainError is raised.
+
+    Returns the original URL unchanged if the request fails.
+    """
+    try:
+        # Use a browser User-Agent — Google News won't redirect bots to the article
+        resp = requests.head(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; research tool)"},
+            allow_redirects=True,
+            timeout=timeout,
+        )
+        final_url = resp.url
+        if final_url and final_url != url:
+            _check_blocklist(final_url)   # enforce blocklist on the resolved URL
+            logger.debug("resolve_redirect: %s → %s", url[:60], final_url[:80])
+            return final_url
+    except BlockedDomainError:
+        raise
+    except Exception as exc:
+        logger.debug("resolve_redirect failed for %s: %s", url[:80], exc)
+    return url
+
 def fetch(
     url: str,
     *,

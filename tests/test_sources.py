@@ -1205,3 +1205,117 @@ def test_discover_deal_market_data_survives_yfinance_failure(monkeypatch):
     with patch.dict(sys.modules, {"yfinance": mock_yf}):
         result = discover_deal_market_data(deal)
     assert result == ""
+
+# ---------------------------------------------------------------------------
+# _infer_ticker .AX fix
+# ---------------------------------------------------------------------------
+
+def test_infer_ticker_au_with_explicit_ticker_gets_ax_suffix():
+    """AU deal where extra["ticker"] = "BHP" (no suffix) must return "BHP.AX"."""
+    deal = RawDeal(title="", url="", source="ASX", region="AU", filing_type="", date="",
+                   company="BHP", extra={"ticker": "BHP"})
+    result = _infer_ticker(deal)
+    assert result == "BHP.AX", f"Expected BHP.AX, got {result}"
+
+
+def test_infer_ticker_already_has_suffix_not_doubled():
+    """If ticker already has .AX, do not double it."""
+    deal = RawDeal(title="", url="", source="ASX", region="AU", filing_type="", date="",
+                   company="BHP", extra={"ticker": "BHP.AX"})
+    assert _infer_ticker(deal) == "BHP.AX"
+
+
+# ---------------------------------------------------------------------------
+# _edgar_filing_url fix
+# ---------------------------------------------------------------------------
+
+from app.sources import _edgar_filing_url
+
+
+def test_edgar_filing_url_builds_archives_url():
+    """Should return the Archives index.json URL, not a cgi-bin browse page."""
+    hit_id = "0001018724/0001018724-24-000005"
+    src = {"cik": "0001018724", "entity_name": "Amazon"}
+    url = _edgar_filing_url(hit_id, src)
+    assert "Archives/edgar/data" in url
+    assert "index.json" in url
+    assert "cgi-bin" not in url
+
+
+def test_edgar_filing_url_accession_dashes_removed():
+    """Accession number in the URL must have dashes removed."""
+    hit_id = "1234567/1234567-26-000001"
+    url = _edgar_filing_url(hit_id, {})
+    assert "123456726000001" in url
+
+
+# ---------------------------------------------------------------------------
+# discover_prnewswire / discover_businesswire
+# ---------------------------------------------------------------------------
+
+from app.sources import discover_prnewswire, discover_businesswire
+
+
+_WIRE_RSS = """<?xml version="1.0"?>
+<rss><channel>
+  <item>
+    <title>Acme Corp to Acquire Beta Ltd for US$2bn</title>
+    <link>https://www.prnewswire.com/news-releases/acme-acquires-beta-123456.html</link>
+    <pubDate>Mon, 26 Oct 2026 09:00:00 GMT</pubDate>
+    <description>Acme Corp announced acquisition of Beta Ltd.</description>
+  </item>
+  <item>
+    <title>Unrelated Tech Conference News</title>
+    <link>https://www.prnewswire.com/news-releases/tech-conf-999.html</link>
+    <pubDate>Mon, 26 Oct 2026 08:00:00 GMT</pubDate>
+    <description>Annual tech conference results.</description>
+  </item>
+</channel></rss>"""
+
+
+def test_discover_prnewswire_filters_by_query():
+    with patch("app.sources.fetch", return_value=_WIRE_RSS):
+        items = discover_prnewswire("Acme acquisition")
+    assert len(items) == 1
+    assert "Acme" in items[0]["title"]
+
+
+def test_discover_prnewswire_returns_direct_urls():
+    with patch("app.sources.fetch", return_value=_WIRE_RSS):
+        items = discover_prnewswire("Acme acquisition")
+    assert items[0]["url"].startswith("https://www.prnewswire.com")
+
+
+def test_discover_businesswire_returns_items():
+    with patch("app.sources.fetch", return_value=_WIRE_RSS):
+        items = discover_businesswire("Acme acquisition")
+    assert len(items) >= 1
+    assert items[0]["source"].startswith("BusinessWire")
+
+
+def test_discover_prnewswire_survives_network_error():
+    with patch("app.sources.fetch", side_effect=Exception("timeout")):
+        items = discover_prnewswire("any query")
+    assert items == []
+
+
+# ---------------------------------------------------------------------------
+# tenor_ no longer classified as yield
+# ---------------------------------------------------------------------------
+
+from app.verify import infer_figure_type
+
+
+def test_tenor_years_not_classified_as_yield():
+    """tenor_years is a duration, not a rate — must be 'price' not 'yield'."""
+    assert infer_figure_type("tenor_years") == "price"
+
+
+def test_tenor_months_not_classified_as_yield():
+    assert infer_figure_type("tenor_months") == "price"
+
+
+def test_yield_patterns_still_work():
+    assert infer_figure_type("us_10y_yield_pct") == "yield"
+    assert infer_figure_type("coupon_rate") == "yield"
+    assert infer_figure_type("spread_bps") == "yield"

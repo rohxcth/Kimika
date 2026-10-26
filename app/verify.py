@@ -98,7 +98,9 @@ _FX_PATTERNS    = (
 )
 
 # Yield patterns — specific to debt instruments
-_YIELD_PATTERNS = ("_yield", "yield_", "coupon_", "_bps", "spread_bps", "tenor_")
+# tenor_* is intentionally excluded: tenor is a duration in years, not a rate —
+# applying bps tolerance to years is dimensionally wrong. It falls through to "price".
+_YIELD_PATTERNS = ("_yield", "yield_", "coupon_", "_bps", "spread_bps")
 
 
 def infer_figure_type(figure_name: str) -> str:
