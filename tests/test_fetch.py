@@ -224,3 +224,54 @@ def test_clear_cache_empty_dir(tmp_path, monkeypatch):
     """clear_cache() on an empty/nonexistent cache dir returns 0."""
     monkeypatch.setattr("app.fetch._CACHE_DIR", tmp_path / "no-cache")
     assert clear_cache() == 0
+
+
+# ---------------------------------------------------------------------------
+# extract_text
+# ---------------------------------------------------------------------------
+
+from app.fetch import extract_text
+
+
+def test_extract_text_strips_tags():
+    html = "<p>Hello <b>world</b></p>"
+    assert extract_text(html) == "Hello world"
+
+
+def test_extract_text_removes_script_blocks():
+    html = "<p>Article text</p><script>alert('x')</script><p>More text</p>"
+    result = extract_text(html)
+    assert "Article text" in result
+    assert "alert" not in result
+
+
+def test_extract_text_removes_nav_and_footer():
+    html = "<nav>Home | About | Contact</nav><main><p>Real content here.</p></main><footer>Copyright 2026</footer>"
+    result = extract_text(html)
+    assert "Real content here" in result
+    assert "Home | About" not in result
+    assert "Copyright" not in result
+
+
+def test_extract_text_removes_style_blocks():
+    html = "<style>.foo { color: red; }</style><p>Clean prose</p>"
+    result = extract_text(html)
+    assert "Clean prose" in result
+    assert "color" not in result
+
+
+def test_extract_text_handles_plain_text():
+    """Plain text (no HTML tags) passes through unchanged."""
+    text = "The Federal Reserve decided to hold rates steady."
+    assert text in extract_text(text)
+
+
+def test_extract_text_handles_empty_string():
+    assert extract_text("") == ""
+
+
+def test_extract_text_collapses_whitespace():
+    html = "<p>  lots   of   spaces  </p>"
+    result = extract_text(html)
+    assert "  " not in result
+    assert "lots" in result

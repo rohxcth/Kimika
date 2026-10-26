@@ -15,7 +15,9 @@ import hashlib
 import json
 import logging
 import os
+import re as _re
 import time
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -24,6 +26,59 @@ import requests
 from app.config import cfg
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# HTML text extraction
+# ---------------------------------------------------------------------------
+
+class _TextExtractor(HTMLParser):
+    """Extract readable prose from HTML, skipping boilerplate blocks."""
+    # Tags whose entire subtree (including text) we discard
+    _SKIP = frozenset({
+        "script", "style", "nav", "header", "footer", "aside",
+        "noscript", "iframe", "svg", "form", "button", "select",
+    })
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._skip_depth = 0
+        self._parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        if tag.lower() in self._SKIP:
+            self._skip_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() in self._SKIP and self._skip_depth > 0:
+            self._skip_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth == 0:
+            text = data.strip()
+            if text:
+                self._parts.append(text)
+
+    def result(self) -> str:
+        return _re.sub(r"\s+", " ", " ".join(self._parts)).strip()
+
+
+def extract_text(html: str) -> str:
+    """Extract readable prose from HTML, discarding nav/script/style/footer blocks.
+
+    Safe to call on plain text or XML — the parser handles non-HTML gracefully.
+    Use this on every fetched document before feeding it to the LLM or dossier,
+    so the model sees content rather than boilerplate.
+
+    Example: a typical news article HTML (50,000 chars) → ~3,000 chars of clean prose.
+    """
+    extractor = _TextExtractor()
+    try:
+        extractor.feed(html)
+    except Exception:
+        pass
+    return extractor.result()
+
 
 # ---------------------------------------------------------------------------
 # Blocklist (loaded once from config at import time)

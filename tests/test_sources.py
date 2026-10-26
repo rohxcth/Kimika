@@ -1141,3 +1141,67 @@ def test_discover_economy_context_survives_all_failures():
     with patch("app.sources.fetch", side_effect=Exception("network down")):
         result = discover_economy_context(date(2026, 10, 26))
     assert isinstance(result, str)
+
+# ---------------------------------------------------------------------------
+# discover_deal_market_data
+# ---------------------------------------------------------------------------
+
+from app.sources import discover_deal_market_data, _infer_ticker
+
+
+def test_infer_ticker_from_extra():
+    deal = RawDeal(title="", url="", source="", region="AU", filing_type="", date="", company="WBC",
+                   extra={"ticker": "WBC.AX"})
+    assert _infer_ticker(deal) == "WBC.AX"
+
+
+def test_infer_ticker_au_company_code():
+    deal = RawDeal(title="", url="", source="", region="AU", filing_type="", date="", company="WBC",
+                   extra={})
+    assert _infer_ticker(deal) == "WBC.AX"
+
+
+def test_infer_ticker_us_returns_none():
+    deal = RawDeal(title="", url="", source="", region="US", filing_type="", date="",
+                   company="Acme Corp", extra={})
+    assert _infer_ticker(deal) is None
+
+
+def test_discover_deal_market_data_returns_string(monkeypatch):
+    """With a valid AU ticker, returns a price table string."""
+    import sys, pandas as pd
+    from unittest.mock import MagicMock
+
+    mock_yf = MagicMock()
+    index = pd.date_range("2026-07-01", periods=3, freq="D", tz="UTC")
+    df = pd.DataFrame({"Close": [3.10, 3.12, 3.15], "Volume": [1000000, 1200000, 900000]}, index=index)
+    mock_yf.Ticker.return_value.history.return_value = df
+
+    deal = RawDeal(title="Scheme", url="", source="ASX", region="AU", filing_type="", date="2026-10-26",
+                   company="WBC", extra={})
+
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
+        result = discover_deal_market_data(deal)
+
+    assert "WBC.AX" in result
+    assert "2026-07-01" in result
+
+
+def test_discover_deal_market_data_empty_on_no_ticker():
+    """US deal with no ticker in extra returns empty string without crashing."""
+    deal = RawDeal(title="Merger", url="", source="EDGAR", region="US", filing_type="8-K",
+                   date="2026-10-26", company="Acme Corporation Long Name", extra={})
+    result = discover_deal_market_data(deal)
+    assert isinstance(result, str)
+
+
+def test_discover_deal_market_data_survives_yfinance_failure(monkeypatch):
+    import sys
+    from unittest.mock import MagicMock
+    mock_yf = MagicMock()
+    mock_yf.Ticker.return_value.history.side_effect = Exception("network error")
+    deal = RawDeal(title="", url="", source="", region="AU", filing_type="", date="",
+                   company="ANZ", extra={})
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
+        result = discover_deal_market_data(deal)
+    assert result == ""

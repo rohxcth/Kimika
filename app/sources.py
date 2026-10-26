@@ -19,7 +19,7 @@ from datetime import date, datetime
 from typing import TypedDict
 
 from app.config import cfg
-from app.fetch import fetch, fetch_json
+from app.fetch import extract_text, fetch, fetch_json
 
 logger = logging.getLogger(__name__)
 
@@ -317,12 +317,48 @@ _RBA_STATEMENT_LINK_RE = _re.compile(
 )
 _FRED_SERIES_URL = "https://api.stlouisfed.org/fred/series/observations"
 
-# Key FRED series: Fed funds rate, CPI (all items), unemployment, 10y Treasury
+# Key FRED series for economy context — 6 most recent observations each
 _FRED_SERIES = {
-    "FEDFUNDS": "Federal Funds Effective Rate",
-    "CPIAUCSL": "US CPI (All Urban Consumers, SA)",
-    "UNRATE": "US Unemployment Rate",
-    "GS10": "US 10-Year Treasury Constant Maturity Rate",
+    "FEDFUNDS":  "Federal Funds Effective Rate (%)",
+    "CPIAUCSL":  "US CPI All Urban Consumers SA (index)",
+    "CPILFESL":  "US Core CPI ex-Food/Energy SA (index)",
+    "PCEPI":     "US PCE Price Index (index)",
+    "UNRATE":    "US Unemployment Rate (%)",
+    "PAYEMS":    "US Nonfarm Payrolls (thousands)",
+    "RSAFS":     "US Retail Sales SA (millions USD)",
+    "HOUST":     "US Housing Starts (thousands, SAAR)",
+    "ICSA":      "US Initial Jobless Claims (thousands)",
+    "GS10":      "US 10-Year Treasury CMT (%)",
+    "DGS2":      "US 2-Year Treasury CMT (%)",
+    "GDPC1":     "US Real GDP (billions 2017 USD, quarterly)",
+}
+
+# US Treasury yield curve XML feed — no API key, official source
+# Returns the full curve: 1m, 2m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y
+_TREASURY_YIELD_CURVE_URL = (
+    "https://home.treasury.gov/resource-center/data-chart-center/"
+    "interest-rates/pages/xml?data=daily_treasury_yield_curve"
+    "&field_tdr_date_value={yyyymm}"
+)
+_TREASURY_YIELD_FIELDS = {
+    "BC_1MONTH": "1m", "BC_2MONTH": "2m", "BC_3MONTH": "3m",
+    "BC_6MONTH": "6m", "BC_1YEAR": "1y", "BC_2YEAR": "2y",
+    "BC_3YEAR": "3y", "BC_5YEAR": "5y", "BC_7YEAR": "7y",
+    "BC_10YEAR": "10y", "BC_20YEAR": "20y", "BC_30YEAR": "30y",
+}
+
+# US sector ETFs for equities breadth analysis
+_SECTOR_TICKERS = {
+    "XLK":  "Technology",
+    "XLF":  "Financials",
+    "XLE":  "Energy",
+    "XLV":  "Health Care",
+    "XLI":  "Industrials",
+    "XLB":  "Materials",
+    "XLRE": "Real Estate",
+    "XLU":  "Utilities",
+    "XLP":  "Consumer Staples",
+    "XLY":  "Consumer Discretionary",
 }
 
 # yfinance tickers for market data
@@ -389,7 +425,7 @@ def discover_economy_context(target_date: date) -> str:
                     statement_urls.append(link)
         for url in statement_urls[:2]:
             try:
-                doc = fetch(url)
+                doc = extract_text(fetch(url))
                 segments.append(f"=== Federal Reserve Press Release ({url}) ===\n{doc[:5000]}")
                 logger.info("Economy context: fetched Fed statement %s (%d chars)", url, len(doc))
             except Exception as exc:
@@ -405,19 +441,39 @@ def discover_economy_context(target_date: date) -> str:
             latest_path = matches[0]  # first match = most recent (page order)
             rba_url = f"https://www.rba.gov.au{latest_path}"
             try:
-                doc = fetch(rba_url)
+                doc = extract_text(fetch(rba_url))
                 segments.append(f"=== RBA Interest Rate Decision ({rba_url}) ===\n{doc[:5000]}")
                 logger.info("Economy context: fetched RBA statement %s (%d chars)", rba_url, len(doc))
             except Exception as exc:
                 logger.warning("Economy context: RBA statement fetch failed: %s", exc)
         else:
             # Fallback: use the index page itself (less useful but better than nothing)
-            segments.append(f"=== RBA Interest Rate Decisions ===\n{index_html[:3000]}")
+            segments.append(f"=== RBA Interest Rate Decisions ===\n{extract_text(index_html)[:3000]}")
             logger.info("Economy context: RBA no statement links found; using index page")
     except Exception as exc:
         logger.warning("Economy context: RBA fetch failed: %s", exc)
 
-    # 3. FRED data (optional - needs API key)
+    # 3. US Treasury yield curve (no key needed — official public XML feed)
+    try:
+        yyyymm = target_date.strftime("%Y%m")
+        xml_text = fetch(_TREASURY_YIELD_CURVE_URL.format(yyyymm=yyyymm))
+        root = ET.fromstring(xml_text)
+        # Parse the most recent entry; entries are in <m:properties> elements
+        # The namespace varies; find any element whose local name ends in the field name
+        curve_rows: list[str] = []
+        # Grab all text from the XML, look for field patterns
+        xml_str = xml_text  # search raw XML for field values
+        for field, label in _TREASURY_YIELD_FIELDS.items():
+            m = _re.search(rf"<[^>]*{field}[^>]*>([0-9.]+)<", xml_str)
+            if m:
+                curve_rows.append(f"{label}: {m.group(1)}%")
+        if curve_rows:
+            segments.append("=== US Treasury Yield Curve ===\n" + "  ".join(curve_rows))
+            logger.info("Economy context: fetched Treasury yield curve (%d points)", len(curve_rows))
+    except Exception as exc:
+        logger.warning("Economy context: Treasury yield curve failed: %s", exc)
+
+    # 4. FRED data (optional - needs API key; 6 most recent observations per series)
     fred_key = os.environ.get("FRED_API_KEY", "")
     if fred_key:
         fred_snippets: list[str] = []
@@ -425,7 +481,7 @@ def discover_economy_context(target_date: date) -> str:
             try:
                 data = fetch_json(
                     f"{_FRED_SERIES_URL}?series_id={series_id}"
-                    f"&api_key={fred_key}&sort_order=desc&limit=3&file_type=json"
+                    f"&api_key={fred_key}&sort_order=desc&limit=6&file_type=json"
                 )
                 obs = data.get("observations", [])
                 if obs:
@@ -613,12 +669,14 @@ def discover_markets_context(target_date: date) -> dict[str, str]:
             logger.debug("FMP quote failed for %s: %s", sym_str, exc)
             return ""
 
-    # Equities
+    # Equities — indices + US sector breakdown
     equities_yf = _fetch_yfinance_tickers(_EQUITY_TICKERS)
     equities_fmp = _fmp_quote(["SPY", "QQQ", "IWM"])
+    sector_yf = _fetch_yfinance_tickers(_SECTOR_TICKERS)
     equities = "\n\n".join(filter(None, [
         "=== Equity Indices (yfinance) ===\n" + equities_yf if equities_yf else "",
         "=== Equity ETFs (FMP cross-check) ===\n" + equities_fmp if equities_fmp else "",
+        "=== US Sector Performance (yfinance) ===\n" + sector_yf if sector_yf else "",
     ]))
 
     # Commodities
@@ -629,25 +687,31 @@ def discover_markets_context(target_date: date) -> dict[str, str]:
         "=== Commodity FMP cross-check ===\n" + commod_fmp if commod_fmp else "",
     ]))
 
-    # Bonds
+    # Bonds — US Treasury yields + AU yield + FRED short-end
     bonds_yf = _fetch_yfinance_tickers(_BOND_TICKERS)
-    # FRED for AU 10y if key available
     fred_key = os.environ.get("FRED_API_KEY", "")
-    au_yield = ""
+    fred_bond_rows: list[str] = []
     if fred_key:
-        try:
-            data = fetch_json(
-                f"{_FRED_SERIES_URL}?series_id=IRLTLT01AUM156N"
-                f"&api_key={fred_key}&sort_order=desc&limit=2&file_type=json"
-            )
-            obs = data.get("observations", [])
-            if obs:
-                au_yield = f"AU 10-Year Govt Bond Yield: {obs[0]['value']}% ({obs[0]['date']})"
-        except Exception as exc:
-            logger.debug("FRED AU yield failed: %s", exc)
+        for series_id, label in [
+            ("IRLTLT01AUM156N", "AU 10-Year Govt Bond Yield"),
+            ("DGS2",            "US 2-Year Treasury CMT"),
+            ("DGS1",            "US 1-Year Treasury CMT"),
+        ]:
+            try:
+                data = fetch_json(
+                    f"{_FRED_SERIES_URL}?series_id={series_id}"
+                    f"&api_key={fred_key}&sort_order=desc&limit=3&file_type=json"
+                )
+                obs = [o for o in data.get("observations", []) if o.get("value") not in (".", None)]
+                if obs:
+                    fred_bond_rows.append(
+                        f"{label}: {obs[0]['value']}% ({obs[0]['date']})"
+                    )
+            except Exception as exc:
+                logger.debug("FRED bond %s failed: %s", series_id, exc)
     bonds = "\n\n".join(filter(None, [
         "=== US Treasury Yields (yfinance) ===\n" + bonds_yf if bonds_yf else "",
-        "=== AU 10Y Yield (FRED) ===\n" + au_yield if au_yield else "",
+        "=== Bond Yields (FRED) ===\n" + "\n".join(fred_bond_rows) if fred_bond_rows else "",
     ]))
 
     # Currencies
@@ -831,15 +895,16 @@ def discover_edgar_fulltext(query: str, max_results: int = 10) -> list[NewsItem]
 # Combined news discovery — all wide-search sources for a query
 # ---------------------------------------------------------------------------
 
-def _enrich_news_items(items: list[NewsItem], max_items: int = 3) -> None:
-    """Fetch full article text for the top ``max_items`` news items in-place.
+def _enrich_news_items(items: list[NewsItem], max_items: int = 5) -> None:
+    """Fetch and clean full article text for the top ``max_items`` news items in-place.
+
+    Fetches the article HTML, strips nav/script/footer boilerplate via extract_text(),
+    and stores clean prose in item["content"]. This typically reduces a 50,000-char
+    HTML page to 2,000-5,000 chars of actual article text.
 
     Skips EDGAR browse-page items (not articles) and any URL that fetch()
-    rejects (blocked domains are handled by app/fetch.py automatically).
+    rejects (blocked domains handled by app/fetch.py automatically).
     A failed fetch is logged and skipped — the item keeps its snippet.
-
-    Fetching 3 articles adds at most 3 extra HTTP calls per discover_news()
-    invocation, keeping request volume low.
     """
     trim = cfg["pipeline"]["doc_trim_chars"]
     fetched = 0
@@ -851,11 +916,12 @@ def _enrich_news_items(items: list[NewsItem], max_items: int = 3) -> None:
         if "sec.gov/cgi-bin" in url or "efts.sec.gov" in url:
             continue
         try:
-            text = fetch(url)
-            if text and len(text) > 200:
-                item["content"] = text[:trim]
+            raw = fetch(url)
+            clean = extract_text(raw)
+            if clean and len(clean) > 200:
+                item["content"] = clean[:trim]
                 fetched += 1
-                logger.debug("Enriched news item: %s (%d chars)", item.get("title", "")[:60], len(text))
+                logger.debug("Enriched news item: %s (%d chars)", item.get("title", "")[:60], len(clean))
         except Exception as exc:
             logger.debug("News enrichment failed for %s: %s", url[:80], exc)
 
@@ -885,11 +951,85 @@ def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem
         except Exception as exc:
             logger.error("%s news discovery raised unexpectedly: %s", name, exc)
 
-    # Enrich top 3 items with full article content
+    # Enrich top 5 items with full article content
     _enrich_news_items(results, max_items=3)
 
     logger.info("discover_news: %d unique items for %r", len(results), query)
     return results
+
+
+# ---------------------------------------------------------------------------
+# Deal market data — share price history for target / acquirer
+# ---------------------------------------------------------------------------
+
+def _infer_ticker(deal: RawDeal) -> str | None:
+    """Best-effort ticker inference from deal metadata.
+
+    Checks deal["extra"]["ticker"] first (set by the classifier if it found one),
+    then for AU deals tries the company field as an ASX code with .AX suffix
+    (ASX codes are 3–5 uppercase letters). Returns None if nothing plausible found.
+    """
+    explicit = (deal.get("extra") or {}).get("ticker", "")
+    if explicit:
+        return str(explicit).strip()
+    if deal.get("region") == "AU":
+        code = (deal.get("company") or "").strip().upper()
+        if 2 <= len(code) <= 5 and code.isalpha():
+            return f"{code}.AX"
+    return None
+
+
+def discover_deal_market_data(deal: RawDeal) -> str:
+    """Fetch 3-month share price history for the target (and acquirer if known).
+
+    Returns a formatted string ready to add to the dossier as a primary data chunk.
+    This gives the LLM the undisturbed price, any pre-announcement run-up, and the
+    post-announcement arbitrage spread — all needed for premium and spread analysis.
+
+    Finance note: undisturbed price = last close before the announcement date.
+    Premium = (offer − undisturbed) / undisturbed. Arbitrage spread = offer − current
+    price; a tight spread signals the market believes the deal will complete.
+
+    Falls back gracefully if tickers are not available or yfinance fails.
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        logger.info("deal market data: yfinance not installed")
+        return ""
+
+    segments: list[str] = []
+
+    def _price_table(ticker: str, label: str) -> str:
+        try:
+            hist = yf.Ticker(ticker).history(period="3mo")
+            if hist.empty:
+                return ""
+            rows = [
+                f"{dt.strftime('%Y-%m-%d')}: close {row['Close']:.4g}  vol {int(row['Volume']):,}"
+                for dt, row in hist.iterrows()
+            ]
+            return f"=== {label} ({ticker}) — 3-Month Price History ===\n" + "\n".join(rows)
+        except Exception as exc:
+            logger.debug("deal market data: %s failed: %s", ticker, exc)
+            return ""
+
+    target_ticker = _infer_ticker(deal)
+    if target_ticker:
+        table = _price_table(target_ticker, f"Target: {deal.get('company', target_ticker)}")
+        if table:
+            segments.append(table)
+
+    acquirer_ticker = (deal.get("extra") or {}).get("acquirer_ticker", "")
+    if acquirer_ticker:
+        table = _price_table(str(acquirer_ticker), f"Acquirer ({acquirer_ticker})")
+        if table:
+            segments.append(table)
+
+    result = "\n\n".join(segments)
+    if result:
+        logger.info("deal market data: fetched price data for %s", deal.get("company", ""))
+    return result
 
 
 # ---------------------------------------------------------------------------

@@ -22,7 +22,7 @@ from datetime import date, datetime
 
 from app.config import cfg
 from app.dossier import build_deal_dossier, build_market_dossier
-from app.fetch import fetch
+from app.fetch import extract_text, fetch
 from app.finance import to_usd
 from app import llm
 from app.prompts import format_dossier_for_prompt
@@ -30,6 +30,7 @@ from app.report import ReportData, save_report
 from app.sources import (
     RawDeal,
     discover_all,
+    discover_deal_market_data,
     discover_economy_context,
     discover_market_figures,
     discover_markets_context,
@@ -151,29 +152,52 @@ def _research_write_verify(deal: RawDeal, date_str: str) -> ReportData | None:
 
     Returns None if the LLM call fails (logged; never crashes the pipeline).
     """
-    # Stage 1: Pool — fetch primary document
+    # Stage 1: Pool — fetch primary document and clean HTML boilerplate
     url = deal.get("url", "")
     primary_doc_text = ""
     source_label = deal.get("source") or "primary filing"
     if url:
         try:
             raw = fetch(url)
-            primary_doc_text = raw[:_TRIM_CHARS]
+            # Strip nav/script/footer boilerplate so the LLM sees filing content only
+            primary_doc_text = extract_text(raw)[:_TRIM_CHARS]
         except Exception as exc:
             logger.warning("Could not fetch primary doc for %s (%s): %s",
                            deal.get("title"), url, exc)
 
-    # Stage 1 (cont.): Pool — discover secondary news sources
-    news_items = []
-    query = f"{deal.get('company', '')} {deal.get('title', '')}".strip()[:120]
-    if query:
+    # Stage 1 (cont.): Pool — discover news from multiple angles for richer context.
+    # Query 1: deal title + company (catches deal-specific coverage).
+    # Query 2: company name alone (catches background on the parties, prior bids,
+    #           financial profile, analyst views not tied to this specific announcement).
+    news_items: list = []
+    seen_news_urls: set[str] = set()
+    base_queries = []
+    deal_query = f"{deal.get('company', '')} {deal.get('title', '')}".strip()[:120]
+    if deal_query:
+        base_queries.append(deal_query)
+    company_query = (deal.get("company") or "").strip()[:80]
+    if company_query and company_query not in base_queries:
+        base_queries.append(company_query)
+    for q in base_queries:
         try:
-            news_items = discover_news(query, max_results_per_source=10)
+            for item in discover_news(q, max_results_per_source=8):
+                if item["url"] not in seen_news_urls:
+                    seen_news_urls.add(item["url"])
+                    news_items.append(item)
         except Exception as exc:
-            logger.warning("News discovery failed for %s: %s", deal.get("title"), exc)
+            logger.warning("News discovery failed for %r: %s", q, exc)
+
+    # Stage 1 (cont.): Pool — target/acquirer share price history for premium analysis
+    raw_texts = [(source_label, primary_doc_text)] if primary_doc_text else []
+    market_data_text = ""
+    try:
+        market_data_text = discover_deal_market_data(deal)
+    except Exception as exc:
+        logger.warning("Deal market data failed for %s: %s", deal.get("title"), exc)
+    if market_data_text:
+        raw_texts.append(("Market price data", market_data_text))
 
     # Stage 2: Collate — assemble dossier with labelled source chunks
-    raw_texts = [(source_label, primary_doc_text)] if primary_doc_text else []
     deal_type_label = deal.get("deal_type", "M&A")
     report_type = {"M&A": "ma_full", "ECM": "ecm", "DCM": "dcm"}.get(deal_type_label, "ma_full")
     topic = deal.get("title") or "Unknown deal"
