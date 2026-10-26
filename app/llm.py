@@ -388,6 +388,7 @@ def write_ma_report(
     primary_doc: str,
     secondary_sources: str,
     date_str: str,
+    verified_facts: str = "",
 ) -> ReportData:
     """Write a full M&A report. Uses Flash (one request per report).
 
@@ -397,7 +398,7 @@ def write_ma_report(
         primary_doc=primary_doc or "Primary document not available.",
         secondary_sources=secondary_sources or "No secondary sources available.",
         date=date_str,
-        verified_facts="",
+        verified_facts=verified_facts,
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -415,6 +416,7 @@ def write_ecm_report(
     primary_doc: str,
     secondary_sources: str,
     date_str: str,
+    verified_facts: str = "",
 ) -> ReportData:
     """Write a full ECM report. Uses Flash (one request per report).
 
@@ -424,7 +426,7 @@ def write_ecm_report(
         primary_doc=primary_doc or "Primary document not available.",
         secondary_sources=secondary_sources or "No secondary sources available.",
         date=date_str,
-        verified_facts="",
+        verified_facts=verified_facts,
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -443,6 +445,7 @@ def write_dcm_report(
     primary_doc: str,
     secondary_sources: str,
     date_str: str,
+    verified_facts: str = "",
 ) -> ReportData:
     """Write a full DCM report. Uses Flash (one request per report).
 
@@ -452,7 +455,7 @@ def write_dcm_report(
         primary_doc=primary_doc or "Primary document not available.",
         secondary_sources=secondary_sources or "No secondary sources available.",
         date=date_str,
-        verified_facts="",
+        verified_facts=verified_facts,
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -473,13 +476,15 @@ def _write_market_report(
     report_type: str,
     section_key: str,
     title_prefix: str,
+    secondary_sources: str = "",
+    verified_facts: str = "",
 ) -> ReportData:
     """Shared writer for all 5 daily market column reports. Uses Flash."""
     prompt = prompt_template.format(
         primary_doc=context or "Market data not available.",
-        secondary_sources="",
+        secondary_sources=secondary_sources,
         date=date_str,
-        verified_facts="",
+        verified_facts=verified_facts,
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -510,43 +515,50 @@ def _stub_market_report(date_str: str, report_type: str, section_key: str, title
     )
 
 
-def write_economy_report(context: str, secondary_sources: str, date_str: str) -> ReportData:
+def write_economy_report(
+    context: str, secondary_sources: str, date_str: str, verified_facts: str = "",
+) -> ReportData:
     """Write the daily Economy column report (macro + policy). Uses Flash."""
     return _write_market_report(
         ECONOMY_SECTION, context, date_str,
         report_type="economy", section_key="1_economy", title_prefix="Economy",
+        secondary_sources=secondary_sources, verified_facts=verified_facts,
     )
 
 
-def write_equities_report(context: str, date_str: str) -> ReportData:
+def write_equities_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
     """Write the daily Equities column report. Uses Flash."""
     return _write_market_report(
         EQUITIES_SECTION, context, date_str,
         report_type="equities", section_key="1_equities", title_prefix="Equities",
+        verified_facts=verified_facts,
     )
 
 
-def write_commodities_report(context: str, date_str: str) -> ReportData:
+def write_commodities_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
     """Write the daily Commodities column report. Uses Flash."""
     return _write_market_report(
         COMMODITIES_SECTION, context, date_str,
         report_type="commodities", section_key="1_commodities", title_prefix="Commodities",
+        verified_facts=verified_facts,
     )
 
 
-def write_bonds_report(context: str, date_str: str) -> ReportData:
+def write_bonds_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
     """Write the daily Bonds column report. Uses Flash."""
     return _write_market_report(
         BONDS_SECTION, context, date_str,
         report_type="bonds", section_key="1_bonds", title_prefix="Bonds",
+        verified_facts=verified_facts,
     )
 
 
-def write_currencies_report(context: str, date_str: str) -> ReportData:
+def write_currencies_report(context: str, date_str: str, verified_facts: str = "") -> ReportData:
     """Write the daily Currencies column report. Uses Flash."""
     return _write_market_report(
         CURRENCIES_SECTION, context, date_str,
         report_type="currencies", section_key="1_currencies", title_prefix="Currencies",
+        verified_facts=verified_facts,
     )
 
 

@@ -1,31 +1,34 @@
-"""Kimika pipeline: Discover → Classify → Pick → Research → Write → Verify → Save.
+"""Kimika pipeline: Pool → Collate → Verify → Style → Synthesise → Save.
 
 Run manually:  python -m app.pipeline --now
 Run for a date: python -m app.pipeline --date 2026-10-26
 
-Stages
-------
-1. discover   — pull M&A candidates from EDGAR, ASX, RNS (app/sources.py)
-2. classify   — batch-classify with LLM (app/llm.py), filter to M&A
-3. pick       — rank by deal value (US$ equiv); take top N for full reports
-4. research   — fetch and trim the primary document for each deal
-5. write      — call LLM to produce structured ReportData (app/llm.py)
-6. verify     — attach verification log to each report
-7. save       — write report.json + update index.json (app/report.py)
+Stages (per report)
+-------------------
+1. Pool      — discover candidates (EDGAR, ASX, RNS) + fetch primary doc + news
+2. Collate   — build a labelled Dossier from all fetched sources (app/dossier.py)
+3. Verify    — cross-reference structured figures; resolve conflicts (app/verify.py)
+4. Style     — format dossier into (primary_doc, secondary_sources) strings (app/prompts)
+5. Synthesise — call LLM with verified facts and formatted sources (app/llm.py)
+6. Save      — write report.json + update index.json (app/report.py)
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from datetime import date, datetime
 
 from app.config import cfg
+from app.dossier import build_deal_dossier, build_market_dossier
 from app.fetch import fetch
 from app.finance import to_usd
 from app import llm
+from app.prompts import format_dossier_for_prompt
 from app.report import ReportData, save_report
-from app.sources import RawDeal, discover_all, discover_economy_context, discover_markets_context
+from app.sources import RawDeal, discover_all, discover_economy_context, discover_markets_context, discover_news
+from app.verify import verify_claim_groups
 
 logger = logging.getLogger(__name__)
 
@@ -137,66 +140,101 @@ def _rank_deals(deals: list[RawDeal]) -> list[RawDeal]:
 
 
 def _research_write_verify(deal: RawDeal, date_str: str) -> ReportData | None:
-    """Fetch primary doc, call LLM, attach verification log.
+    """Pool → Collate → Verify → Style → Synthesise for a single deal.
 
-    Returns None if the primary document cannot be fetched (logged; never crashes).
+    Returns None if the LLM call fails (logged; never crashes the pipeline).
     """
+    # Stage 1: Pool — fetch primary document
     url = deal.get("url", "")
-    primary_doc = ""
+    primary_doc_text = ""
+    source_label = deal.get("source") or "primary filing"
     if url:
         try:
             raw = fetch(url)
-            primary_doc = raw[:_TRIM_CHARS]  # trim to budget
+            primary_doc_text = raw[:_TRIM_CHARS]
         except Exception as exc:
             logger.warning("Could not fetch primary doc for %s (%s): %s",
                            deal.get("title"), url, exc)
-            # Continue with empty doc — LLM will note "Not publicly disclosed"
 
-    secondary_sources = ""  # Step 6 stub; Step 7 adds secondary fetching
+    # Stage 1 (cont.): Pool — discover secondary news sources
+    news_items = []
+    query = f"{deal.get('company', '')} {deal.get('title', '')}".strip()[:120]
+    if query:
+        try:
+            news_items = discover_news(query, max_results_per_source=10)
+        except Exception as exc:
+            logger.warning("News discovery failed for %s: %s", deal.get("title"), exc)
 
-    deal_type = deal.get("deal_type", "M&A")
+    # Stage 2: Collate — assemble dossier with labelled source chunks
+    raw_texts = [(source_label, primary_doc_text)] if primary_doc_text else []
+    deal_type_label = deal.get("deal_type", "M&A")
+    report_type = {"M&A": "ma_full", "ECM": "ecm", "DCM": "dcm"}.get(deal_type_label, "ma_full")
+    topic = deal.get("title") or "Unknown deal"
+    dossier = build_deal_dossier(topic, report_type, date_str, raw_texts, news_items=news_items)
+
+    # Stage 3: Verify — cross-reference structured figures from deal metadata.
+    # Numeric fields from deal["extra"] (e.g. deal_value_usd) become claim groups
+    # with one source each, producing Single-source status — accurate for a filing
+    # seen for the first time. As more sources land, status upgrades to Verified.
+    claim_groups = _deal_claim_groups(deal)
+    verify_result = verify_claim_groups(claim_groups)
+
+    # Stage 4: Style — format dossier into prompt-ready strings
+    primary_doc, secondary_sources = format_dossier_for_prompt(dossier)
+
+    # Stage 5: Synthesise
+    verified_facts_str = (
+        json.dumps(verify_result["verified_facts"], indent=2)
+        if verify_result["verified_facts"] else ""
+    )
+
     writer = {
         "M&A":   llm.write_ma_report,
         "ECM":   llm.write_ecm_report,
         "DCM":   llm.write_dcm_report,
-        "Other": llm.write_ma_report,   # closest template for now
-    }.get(deal_type, llm.write_ma_report)
+        "Other": llm.write_ma_report,
+    }.get(deal_type_label, llm.write_ma_report)
 
     try:
-        report = writer(deal, primary_doc, secondary_sources, date_str)
+        report = writer(deal, primary_doc, secondary_sources, date_str,
+                        verified_facts=verified_facts_str)
     except Exception as exc:
         logger.error("LLM write failed for %s: %s", deal.get("title"), exc)
         return None
 
-    # Attach stub verification log (real crosscheck added in Step 7)
-    report.verification_log = _stub_verification(report)
+    report.verification_log = verify_result["verification_log"]
     return report
 
 
-def _stub_verification(report: ReportData) -> list[dict]:
-    """Placeholder verification log — Step 7 replaces with real crosscheck calls."""
-    return [
-        {
-            "figure": "pipeline_stub",
-            "value": "n/a",
-            "status": "❓ Single source",
-            "sources": ["stub"],
-            "note": "Verification not yet implemented (Step 7).",
-        }
-    ]
+def _deal_claim_groups(deal: RawDeal) -> dict:
+    """Extract claim groups from a deal's extra metadata for cross-verification.
+
+    Numeric fields in deal["extra"] (e.g. deal_value_usd, offer_price) become
+    single-source claim groups. Text fields are excluded. Status will be
+    Single source until a second independent source confirms the same value.
+
+    Finance note: only positive numeric values are included; 0 and negative
+    values indicate unknown or data errors and are excluded.
+    """
+    groups: dict = {}
+    extra = deal.get("extra") or {}
+    source = deal.get("source") or "primary filing"
+    for key, val in extra.items():
+        if isinstance(val, (int, float)) and val > 0:
+            groups[key] = {source: val}
+    return groups
 
 
 def _write_market_reports(date_str: str) -> list[ReportData]:
-    """Generate all 5 daily market column reports: Economy, Equities, Commodities, Bonds, Currencies.
+    """Pool → Collate → Verify → Style → Synthesise for all 5 market columns.
 
-    Fetches economy context (Fed/RBA/FRED) and market data (yfinance/FMP),
-    then calls one LLM writer per column. A failure in any single report is
-    logged and skipped; the others still run.
+    Economy, Equities, Commodities, Bonds, Currencies — one report per column.
+    A failure in any single column is logged and skipped; the others still run.
     """
     target_date = date.fromisoformat(date_str)
     reports: list[ReportData] = []
 
-    # Fetch contexts (each degrades gracefully to "" on failure)
+    # Stage 1: Pool — fetch primary data contexts
     try:
         economy_ctx = discover_economy_context(target_date)
     except Exception as exc:
@@ -209,21 +247,46 @@ def _write_market_reports(date_str: str) -> list[ReportData]:
         logger.warning("Markets context fetch failed: %s", exc)
         markets_ctx = {}
 
-    writers = [
-        (llm.write_economy_report,     economy_ctx,                  "Economy"),
-        (llm.write_equities_report,    markets_ctx.get("equities", ""),   "Equities"),
-        (llm.write_commodities_report, markets_ctx.get("commodities", ""), "Commodities"),
-        (llm.write_bonds_report,       markets_ctx.get("bonds", ""),      "Bonds"),
-        (llm.write_currencies_report,  markets_ctx.get("currencies", ""), "Currencies"),
+    # Per-column configuration: (report_type, writer_fn, label, primary_ctx, news_query)
+    columns = [
+        ("economy",     llm.write_economy_report,     "Economy",
+         economy_ctx,                          "Federal Reserve FOMC RBA monetary policy interest rates"),
+        ("equities",    llm.write_equities_report,    "Equities",
+         markets_ctx.get("equities", ""),      "stock market S&P 500 ASX 200 equities index"),
+        ("commodities", llm.write_commodities_report, "Commodities",
+         markets_ctx.get("commodities", ""),   "oil gold copper iron ore commodities"),
+        ("bonds",       llm.write_bonds_report,       "Bonds",
+         markets_ctx.get("bonds", ""),         "US Treasury yield bonds interest rates"),
+        ("currencies",  llm.write_currencies_report,  "Currencies",
+         markets_ctx.get("currencies", ""),    "USD AUD EUR FX exchange rate currency"),
     ]
 
-    for writer_fn, ctx, label in writers:
+    for report_type, writer_fn, label, ctx, news_query in columns:
         try:
+            # Stage 1 (cont.): Pool news for secondary commentary
+            news_items = []
+            try:
+                news_items = discover_news(news_query, max_results_per_source=5)
+            except Exception as exc:
+                logger.debug("News discovery for %s failed: %s", label, exc)
+
+            # Stage 2: Collate
+            raw_texts = [(f"{label} context", ctx)] if ctx else []
+            dossier = build_market_dossier(report_type, date_str, raw_texts, {}, news_items=news_items)
+
+            # Stage 3: Verify — market context is unstructured text; no claim groups
+            verify_result = verify_claim_groups({})
+
+            # Stage 4: Style
+            primary_doc, secondary_sources = format_dossier_for_prompt(dossier)
+
+            # Stage 5: Synthesise
             if label == "Economy":
-                report = writer_fn(ctx, "", date_str)
+                report = writer_fn(primary_doc, secondary_sources, date_str)
             else:
-                report = writer_fn(ctx, date_str)
-            report.verification_log = _stub_verification(report)
+                report = writer_fn(primary_doc, date_str)
+
+            report.verification_log = verify_result["verification_log"]
             reports.append(report)
             logger.info("Market report written: %s", label)
         except Exception as exc:

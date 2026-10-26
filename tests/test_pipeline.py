@@ -15,6 +15,7 @@ import pytest
 
 from app.pipeline import (
     _bucket_deals,
+    _deal_claim_groups,
     _rank_deals,
     _write_market_reports,
     run,
@@ -326,37 +327,56 @@ def test_pipeline_run_writes_files(tmp_path, monkeypatch):
     stub_deal = _raw_deal(val_usd=2000)
     stub_report = _stub_report()
 
+    _mkt_stubs = {rt: _stub_market(rt) for rt in
+                  ("economy", "equities", "commodities", "bonds", "currencies")}
     with (
         patch("app.pipeline.discover_all", return_value=[stub_deal]),
         patch("app.pipeline.llm.classify_deals", return_value=[
             {"index": 0, "deal_type": "M&A", "region": "AU", "confidence": "high", "reason": "test"}
         ]),
         patch("app.pipeline.fetch", return_value="<html>Filing content</html>"),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.discover_economy_context", return_value=""),
+        patch("app.pipeline.discover_markets_context", return_value={}),
         patch("app.pipeline.llm.write_ma_report", return_value=stub_report),
-        patch("app.pipeline.save_report", wraps=lambda r: save_report.__wrapped__(r) if hasattr(save_report, '__wrapped__') else _save_to_tmp(r, tmp_path)),
+        patch("app.pipeline.llm.write_economy_report",     return_value=_mkt_stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=_mkt_stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=_mkt_stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=_mkt_stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  return_value=_mkt_stubs["currencies"]),
+        patch("app.pipeline.save_report") as mock_save,
     ):
-        # Patch save_report directly in report module
-        with patch("app.pipeline.save_report") as mock_save:
-            mock_save.return_value = tmp_path / "reports" / DATE_STR / "test-slug" / "report.json"
-            summary = run(date_str=DATE_STR)
+        mock_save.return_value = tmp_path / "reports" / DATE_STR / "test-slug" / "report.json"
+        summary = run(date_str=DATE_STR)
 
     assert summary["date"] == DATE_STR
-    assert summary["full_reports"] == 1
+    assert summary["full_reports"] == 6  # 1 M&A deal + 5 market reports
 
 
 def test_pipeline_run_no_deals(tmp_path, monkeypatch):
-    """Pipeline with zero discoveries should not crash."""
+    """Pipeline with zero deal discoveries should not crash and still writes market reports."""
     monkeypatch.setattr("app.report._REPORTS_ROOT", tmp_path / "reports")
+    _stubs = {rt: _stub_market(rt) for rt in
+              ("economy", "equities", "commodities", "bonds", "currencies")}
 
     with (
         patch("app.pipeline.discover_all", return_value=[]),
         patch("app.pipeline.llm.classify_deals", return_value=[]),
+        patch("app.pipeline.discover_economy_context", return_value=""),
+        patch("app.pipeline.discover_markets_context", return_value={}),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.llm.write_economy_report",     return_value=_stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=_stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=_stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=_stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  return_value=_stubs["currencies"]),
         patch("app.pipeline.save_report") as mock_save,
     ):
         mock_save.return_value = None
         summary = run(date_str=DATE_STR)
 
-    assert summary["full_reports"] == 0
+    assert summary["date"] == DATE_STR
+    assert summary["full_reports"] == 5  # 5 market reports even with no deals
 
 
 def test_pipeline_run_fetch_failure_continues(tmp_path, monkeypatch):
@@ -365,20 +385,30 @@ def test_pipeline_run_fetch_failure_continues(tmp_path, monkeypatch):
     stub_deal = _raw_deal()
     stub_rep = _stub_report()
 
+    _mkt_stubs = {rt: _stub_market(rt) for rt in
+                  ("economy", "equities", "commodities", "bonds", "currencies")}
     with (
         patch("app.pipeline.discover_all", return_value=[stub_deal]),
         patch("app.pipeline.llm.classify_deals", return_value=[
             {"index": 0, "deal_type": "M&A", "region": "AU", "confidence": "high", "reason": "test"}
         ]),
         patch("app.pipeline.fetch", side_effect=Exception("timeout")),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.discover_economy_context", return_value=""),
+        patch("app.pipeline.discover_markets_context", return_value={}),
         patch("app.pipeline.llm.write_ma_report", return_value=stub_rep),
+        patch("app.pipeline.llm.write_economy_report",     return_value=_mkt_stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=_mkt_stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=_mkt_stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=_mkt_stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  return_value=_mkt_stubs["currencies"]),
         patch("app.pipeline.save_report") as mock_save,
     ):
         mock_save.return_value = None
         summary = run(date_str=DATE_STR)
 
-    # Should still produce a report (with empty primary_doc)
-    assert summary["full_reports"] == 1
+    # Fetch failed but pipeline continues with empty doc; 1 deal + 5 market = 6
+    assert summary["full_reports"] == 6
 
 
 # ---------------------------------------------------------------------------
@@ -422,6 +452,7 @@ def test_write_market_reports_returns_five(tmp_path):
             "equities": "eq ctx", "commodities": "com ctx",
             "bonds": "bon ctx", "currencies": "fx ctx",
         }),
+        patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
         patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
@@ -449,6 +480,7 @@ def test_write_market_reports_skips_failed_writer(tmp_path):
         patch("app.pipeline.discover_markets_context", return_value={
             "equities": "", "commodities": "", "bonds": "", "currencies": "",
         }),
+        patch("app.pipeline.discover_news", return_value=[]),
         patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
         patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
         patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
@@ -459,3 +491,129 @@ def test_write_market_reports_skips_failed_writer(tmp_path):
 
     assert len(reports) == 4
     assert all(r.report_type != "currencies" for r in reports)
+
+
+# ---------------------------------------------------------------------------
+# _deal_claim_groups
+# ---------------------------------------------------------------------------
+
+def test_deal_claim_groups_extracts_numeric_fields():
+    deal = _raw_deal(val_usd=1500.0)
+    groups = _deal_claim_groups(deal)
+    assert "deal_value_usd" in groups
+    assert 1500.0 in groups["deal_value_usd"].values()
+
+
+def test_deal_claim_groups_excludes_none():
+    deal = _raw_deal(val_usd=None)
+    groups = _deal_claim_groups(deal)
+    assert "deal_value_usd" not in groups
+
+
+def test_deal_claim_groups_excludes_zero():
+    deal = _raw_deal(val_usd=0)
+    groups = _deal_claim_groups(deal)
+    assert "deal_value_usd" not in groups
+
+
+def test_deal_claim_groups_excludes_text_fields():
+    deal = _raw_deal()
+    deal = dict(deal)
+    deal["extra"] = {"ticker": "ACM", "deal_value_usd": 1000.0}
+    groups = _deal_claim_groups(deal)
+    assert "ticker" not in groups
+    assert "deal_value_usd" in groups
+
+
+def test_deal_claim_groups_source_label():
+    deal = dict(_raw_deal())
+    deal["source"] = "ASX announcement"
+    deal["extra"] = {"deal_value_usd": 2000.0}
+    groups = _deal_claim_groups(deal)
+    assert "ASX announcement" in groups["deal_value_usd"]
+
+
+def test_deal_claim_groups_empty_extra():
+    deal = dict(_raw_deal())
+    deal["extra"] = {}
+    groups = _deal_claim_groups(deal)
+    assert groups == {}
+
+
+# ---------------------------------------------------------------------------
+# Verification log: no stub entries after Step 20
+# ---------------------------------------------------------------------------
+
+def test_research_write_verify_no_stub_log(tmp_path):
+    """Verification log should not contain the old Step 7 stub message."""
+    stub_rep = _stub_report()
+    stub_rep.verification_log = []
+
+    with (
+        patch("app.pipeline.fetch", return_value="Filing content"),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.llm.write_ma_report", return_value=stub_rep),
+    ):
+        from app.pipeline import _research_write_verify
+        deal = dict(_raw_deal())
+        deal["deal_type"] = "M&A"
+        report = _research_write_verify(deal, DATE_STR)
+
+    assert report is not None
+    for entry in report.verification_log:
+        assert "Step 7" not in entry.get("note", "")
+        assert entry.get("sources") != ["stub"]
+
+
+def test_market_reports_no_stub_log(tmp_path):
+    """Market column verification log should be empty list, not a stub entry."""
+    stubs = {rt: _stub_market(rt) for rt in
+             ("economy", "equities", "commodities", "bonds", "currencies")}
+    # Stub reports start with empty verification_log; after pipeline they stay empty
+    with (
+        patch("app.pipeline.discover_economy_context", return_value="eco ctx"),
+        patch("app.pipeline.discover_markets_context", return_value={
+            "equities": "eq", "commodities": "com", "bonds": "bon", "currencies": "fx",
+        }),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  return_value=stubs["currencies"]),
+    ):
+        reports = _write_market_reports(DATE_STR)
+
+    for report in reports:
+        for entry in report.verification_log:
+            assert "stub" not in entry.get("note", "").lower()
+
+
+# ---------------------------------------------------------------------------
+# Pipeline run no-deals includes market reports (regression)
+# ---------------------------------------------------------------------------
+
+def test_pipeline_run_no_deals_still_writes_market_reports(tmp_path, monkeypatch):
+    """Zero deal discoveries should still produce 5 market reports."""
+    monkeypatch.setattr("app.report._REPORTS_ROOT", tmp_path / "reports")
+    stubs = {rt: _stub_market(rt) for rt in
+             ("economy", "equities", "commodities", "bonds", "currencies")}
+
+    with (
+        patch("app.pipeline.discover_all", return_value=[]),
+        patch("app.pipeline.llm.classify_deals", return_value=[]),
+        patch("app.pipeline.discover_economy_context", return_value=""),
+        patch("app.pipeline.discover_markets_context", return_value={}),
+        patch("app.pipeline.discover_news", return_value=[]),
+        patch("app.pipeline.llm.write_economy_report",     return_value=stubs["economy"]),
+        patch("app.pipeline.llm.write_equities_report",    return_value=stubs["equities"]),
+        patch("app.pipeline.llm.write_commodities_report", return_value=stubs["commodities"]),
+        patch("app.pipeline.llm.write_bonds_report",       return_value=stubs["bonds"]),
+        patch("app.pipeline.llm.write_currencies_report",  return_value=stubs["currencies"]),
+        patch("app.pipeline.save_report") as mock_save,
+    ):
+        mock_save.return_value = None
+        summary = run(date_str=DATE_STR)
+
+    # full_reports counts all saved reports; 5 market reports should be included
+    assert summary["full_reports"] == 5
