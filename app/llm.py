@@ -397,6 +397,7 @@ def write_ma_report(
         primary_doc=primary_doc or "Primary document not available.",
         secondary_sources=secondary_sources or "No secondary sources available.",
         date=date_str,
+        verified_facts="",
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -423,6 +424,7 @@ def write_ecm_report(
         primary_doc=primary_doc or "Primary document not available.",
         secondary_sources=secondary_sources or "No secondary sources available.",
         date=date_str,
+        verified_facts="",
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -450,6 +452,7 @@ def write_dcm_report(
         primary_doc=primary_doc or "Primary document not available.",
         secondary_sources=secondary_sources or "No secondary sources available.",
         date=date_str,
+        verified_facts="",
     )
     text = _call(_FLASH, "flash", prompt)
 
@@ -476,6 +479,7 @@ def _write_market_report(
         primary_doc=context or "Market data not available.",
         secondary_sources="",
         date=date_str,
+        verified_facts="",
     )
     text = _call(_FLASH, "flash", prompt)
 
