@@ -1,6 +1,6 @@
 # Kimika — rules for Claude Code
 
-Kimika is a **one-page web app** that runs **every day** and publishes **separate, standalone reports**: **one report per deal** (US, Australia, UK), plus **one daily Economy & Markets report** (sections: Economy, Equities, Commodities, Debt, Currencies). **Each report downloads as its own professional PDF**, sent to **investment banking analysts and finance professionals**. It discovers stories from **multiple public sources**, cross-verifies every figure, researches deals from primary documents, and posts each morning. Full design: `kimika-spec.md`.
+Kimika is a **one-page web app** that runs **every day** and publishes **separate, standalone reports**: **one report per deal** (US, Australia, UK), plus **five daily market column reports** (Economy, Equities, Commodities, Bonds, Currencies). It pools data from as many public sources as possible, collates them into a dossier, cross-verifies every figure in Python, then synthesises comprehensive reports (3,500–5,000w for M&A; 2,500–3,500w for market columns) using Gemini Flash. Reports are read in the browser. Full design: `kimika-spec.md`.
 
 **Keep it simple.** One page, plain files for storage, no database, no accounts, no extra pages. Don't add features the spec doesn't ask for.
 
@@ -21,6 +21,7 @@ You are building this app. The app's own prompts (`app/prompts/`) must follow th
 2. **Tier discipline.** Finish Tier 1 before Tier 2. Tier 3 only when asked.
 3. Small, readable functions. Comment the finance logic. No clever abstractions.
 4. **Never let one failed source or story crash a run.** Log it and continue.
+4a. **Update existing reports every morning.** Each daily run re-pools and re-synthesises all ongoing deal reports, not just new announcements. New price data, shareholder disclosures, news coverage and regulatory updates are incorporated. The prior version is archived in version history before overwriting.
 5. After each step, suggest a one-line DEVLOG entry. Rohith writes `DEVLOG.md` himself; it is his evidence of contribution.
 6. When Rohith corrects a mistake, offer to record it in `docs/lessons.md`.
 7. **Use the subagents** in `.claude/agents/`:
@@ -64,7 +65,7 @@ You are building this app. The app's own prompts (`app/prompts/`) must follow th
 8. **Never present speculation as fact.** If something isn't public, say "Not publicly disclosed".
 9. **No in-text citations.** No footnote numbers, bracketed references or source names cluttering the prose. Each report ends with a **Bibliography** listing the sources used. Verification details live in the report's data file and the page's verification toggle.
 10. **Copyright.** Paraphrase sources. No reproduced passages.
-11. **Concise and professional.** No padding, no educational asides.
+11. **Comprehensive but never padded.** Target word counts: M&A 3,500–5,000w; ECM/DCM 2,000–3,000w; market columns 2,500–3,500w. When source material is thin, merge or collapse sections rather than padding — a shorter denser report beats a longer padded one. Reports grow richer as new documents land; the version history tracks each update. No educational asides.
 12. **Breadth, prioritised by size.** Cover as many deals and as much of the markets as the free-tier limits allow. When not everything fits, prioritise the **largest deals by value** (US$ equivalent).
 
 ## PDF

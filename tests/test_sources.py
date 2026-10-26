@@ -14,17 +14,23 @@ import pytest
 
 from app.sources import (
     RawDeal,
+    NewsItem,
     _is_ma_asx,
     _is_ma_rns,
     _parse_asx_date,
     _parse_rns_date,
     _rns_filing_type,
+    _strip_html,
     discover_all,
     discover_asx,
     discover_edgar,
     discover_rns,
     discover_economy_context,
     discover_markets_context,
+    discover_google_news_rss,
+    discover_newsapi,
+    discover_edgar_fulltext,
+    discover_news,
 )
 
 TARGET_DATE = date(2026, 10, 26)
@@ -520,3 +526,303 @@ def test_markets_context_yfinance_no_data_returns_empty_strings():
     assert set(result.keys()) == {"equities", "commodities", "bonds", "currencies"}
     for val in result.values():
         assert isinstance(val, str)
+
+
+# ---------------------------------------------------------------------------
+# _strip_html
+# ---------------------------------------------------------------------------
+
+def test_strip_html_removes_tags():
+    assert _strip_html("<b>Hello</b> <i>world</i>") == "Hello world"
+
+
+def test_strip_html_plain_text_unchanged():
+    assert _strip_html("No tags here") == "No tags here"
+
+
+def test_strip_html_empty_string():
+    assert _strip_html("") == ""
+
+
+# ---------------------------------------------------------------------------
+# Google News RSS fixtures and tests
+# ---------------------------------------------------------------------------
+
+GOOGLE_NEWS_RSS_FIXTURE = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Google News</title>
+    <item>
+      <title>Acme Corp to acquire Beta Ltd for A$2bn</title>
+      <link>https://news.google.com/rss/articles/abc123</link>
+      <pubDate>Mon, 26 Oct 2026 07:00:00 GMT</pubDate>
+      <description>&lt;p&gt;Acme Corp has announced a A$2bn scheme of arrangement.&lt;/p&gt;</description>
+      <source url="https://reuters.com">Reuters</source>
+    </item>
+    <item>
+      <title>Beta Ltd shareholders to vote on scheme</title>
+      <link>https://news.google.com/rss/articles/def456</link>
+      <pubDate>Mon, 26 Oct 2026 08:00:00 GMT</pubDate>
+      <description>Scheme vote scheduled for December.</description>
+      <source url="https://afr.com">AFR</source>
+    </item>
+    <item>
+      <title>No title or link article</title>
+      <link></link>
+      <pubDate>Mon, 26 Oct 2026 09:00:00 GMT</pubDate>
+      <description>Should be filtered out.</description>
+    </item>
+  </channel>
+</rss>"""
+
+
+def test_google_news_rss_returns_items():
+    with patch("app.sources.fetch", return_value=GOOGLE_NEWS_RSS_FIXTURE):
+        items = discover_google_news_rss("Acme Corp Beta Ltd acquisition")
+    assert len(items) == 2  # third item has empty link — filtered out
+
+
+def test_google_news_rss_item_fields():
+    with patch("app.sources.fetch", return_value=GOOGLE_NEWS_RSS_FIXTURE):
+        items = discover_google_news_rss("Acme Corp")
+    first = items[0]
+    assert first["title"] == "Acme Corp to acquire Beta Ltd for A$2bn"
+    assert "news.google.com" in first["url"]
+    assert first["source"] == "GoogleNews:Reuters"
+    assert first["published"] == "Mon, 26 Oct 2026 07:00:00 GMT"
+
+
+def test_google_news_rss_strips_html_from_snippet():
+    with patch("app.sources.fetch", return_value=GOOGLE_NEWS_RSS_FIXTURE):
+        items = discover_google_news_rss("Acme")
+    # Description had <p> tags — should be stripped
+    assert "<p>" not in items[0]["snippet"]
+    assert "Acme Corp" in items[0]["snippet"]
+
+
+def test_google_news_rss_network_error_returns_empty():
+    with patch("app.sources.fetch", side_effect=ConnectionError("timeout")):
+        items = discover_google_news_rss("test query")
+    assert items == []
+
+
+def test_google_news_rss_invalid_xml_returns_empty():
+    with patch("app.sources.fetch", return_value="not valid xml <<<"):
+        items = discover_google_news_rss("test query")
+    assert items == []
+
+
+def test_google_news_rss_max_results_respected():
+    with patch("app.sources.fetch", return_value=GOOGLE_NEWS_RSS_FIXTURE):
+        items = discover_google_news_rss("query", max_results=1)
+    assert len(items) == 1
+
+
+# ---------------------------------------------------------------------------
+# NewsAPI fixtures and tests
+# ---------------------------------------------------------------------------
+
+NEWSAPI_FIXTURE = {
+    "status": "ok",
+    "totalResults": 2,
+    "articles": [
+        {
+            "title": "Acme Corp scheme approved by court",
+            "url": "https://apnews.com/article/acme-corp-scheme",
+            "publishedAt": "2026-10-26T08:00:00Z",
+            "description": "The Federal Court approved the Acme/Beta scheme.",
+            "source": {"name": "AP News"},
+        },
+        {
+            "title": "Beta Ltd shareholders vote in favour",
+            "url": "https://reuters.com/article/beta-vote",
+            "publishedAt": "2026-10-26T09:00:00Z",
+            "description": "98% of Beta Ltd shareholders voted in favour.",
+            "source": {"name": "Reuters"},
+        },
+    ],
+}
+
+
+def test_newsapi_returns_items_when_key_set():
+    with (
+        patch("app.sources.fetch_json", return_value=NEWSAPI_FIXTURE),
+        patch.dict("os.environ", {"NEWSAPI_KEY": "test_key"}),
+    ):
+        items = discover_newsapi("Acme Corp Beta Ltd")
+    assert len(items) == 2
+
+
+def test_newsapi_item_fields():
+    with (
+        patch("app.sources.fetch_json", return_value=NEWSAPI_FIXTURE),
+        patch.dict("os.environ", {"NEWSAPI_KEY": "test_key"}),
+    ):
+        items = discover_newsapi("Acme Corp")
+    first = items[0]
+    assert first["title"] == "Acme Corp scheme approved by court"
+    assert first["source"] == "NewsAPI:AP News"
+    assert first["published"] == "2026-10-26T08:00:00Z"
+
+
+def test_newsapi_skips_when_no_key():
+    import os
+    os.environ.pop("NEWSAPI_KEY", None)
+    with patch("app.sources.fetch_json") as mock_fetch:
+        items = discover_newsapi("test query")
+    assert items == []
+    mock_fetch.assert_not_called()
+
+
+def test_newsapi_bad_status_returns_empty():
+    with (
+        patch("app.sources.fetch_json", return_value={"status": "error", "message": "apiKeyInvalid"}),
+        patch.dict("os.environ", {"NEWSAPI_KEY": "bad_key"}),
+    ):
+        items = discover_newsapi("test")
+    assert items == []
+
+
+def test_newsapi_network_error_returns_empty():
+    with (
+        patch("app.sources.fetch_json", side_effect=ConnectionError("timeout")),
+        patch.dict("os.environ", {"NEWSAPI_KEY": "test_key"}),
+    ):
+        items = discover_newsapi("test")
+    assert items == []
+
+
+def test_newsapi_filters_items_missing_title_or_url():
+    fixture = {
+        "status": "ok",
+        "articles": [
+            {"title": "", "url": "https://example.com", "source": {"name": "X"}, "publishedAt": "", "description": ""},
+            {"title": "Good article", "url": "", "source": {"name": "Y"}, "publishedAt": "", "description": ""},
+            {"title": "Valid", "url": "https://valid.com", "source": {"name": "Z"}, "publishedAt": "", "description": ""},
+        ],
+    }
+    with (
+        patch("app.sources.fetch_json", return_value=fixture),
+        patch.dict("os.environ", {"NEWSAPI_KEY": "key"}),
+    ):
+        items = discover_newsapi("test")
+    assert len(items) == 1
+    assert items[0]["title"] == "Valid"
+
+
+# ---------------------------------------------------------------------------
+# EDGAR full-text search
+# ---------------------------------------------------------------------------
+
+EDGAR_FULLTEXT_FIXTURE = {
+    "hits": {
+        "hits": [
+            {
+                "_id": "0001234567/000001",
+                "_source": {
+                    "entity_name": "Acme Corp",
+                    "form_type": "8-K",
+                    "file_date": "2026-10-26",
+                    "cik": "0001234567",
+                },
+            },
+            {
+                "_id": "0009876543/000002",
+                "_source": {
+                    "entity_name": "Beta Ltd",
+                    "form_type": "DEFM14A",
+                    "file_date": "2026-10-20",
+                    "cik": "0009876543",
+                },
+            },
+        ]
+    }
+}
+
+
+def test_edgar_fulltext_returns_items():
+    with (
+        patch("app.sources.fetch_json", return_value=EDGAR_FULLTEXT_FIXTURE),
+        patch("app.sources.time.sleep"),
+    ):
+        items = discover_edgar_fulltext("Acme Corp Beta Ltd")
+    assert len(items) == 2
+
+
+def test_edgar_fulltext_item_fields():
+    with (
+        patch("app.sources.fetch_json", return_value=EDGAR_FULLTEXT_FIXTURE),
+        patch("app.sources.time.sleep"),
+    ):
+        items = discover_edgar_fulltext("Acme")
+    first = items[0]
+    assert first["source"] == "EDGAR_fulltext"
+    assert "Acme Corp" in first["title"]
+    assert "8-K" in first["title"]
+    assert first["published"] == "2026-10-26"
+
+
+def test_edgar_fulltext_max_results_respected():
+    with (
+        patch("app.sources.fetch_json", return_value=EDGAR_FULLTEXT_FIXTURE),
+        patch("app.sources.time.sleep"),
+    ):
+        items = discover_edgar_fulltext("Acme", max_results=1)
+    assert len(items) == 1
+
+
+def test_edgar_fulltext_network_error_returns_empty():
+    with patch("app.sources.fetch_json", side_effect=ConnectionError("down")):
+        items = discover_edgar_fulltext("test")
+    assert items == []
+
+
+# ---------------------------------------------------------------------------
+# discover_news — combined aggregator
+# ---------------------------------------------------------------------------
+
+def test_discover_news_combines_sources():
+    with (
+        patch("app.sources.discover_google_news_rss", return_value=[
+            NewsItem(title="G1", url="https://g1.com", source="GoogleNews:Reuters", published="", snippet=""),
+        ]),
+        patch("app.sources.discover_newsapi", return_value=[
+            NewsItem(title="N1", url="https://n1.com", source="NewsAPI:AP", published="", snippet=""),
+        ]),
+        patch("app.sources.discover_edgar_fulltext", return_value=[
+            NewsItem(title="E1", url="https://e1.com", source="EDGAR_fulltext", published="", snippet=""),
+        ]),
+    ):
+        items = discover_news("test query")
+    assert len(items) == 3
+    sources = {i["source"] for i in items}
+    assert "GoogleNews:Reuters" in sources
+    assert "NewsAPI:AP" in sources
+    assert "EDGAR_fulltext" in sources
+
+
+def test_discover_news_deduplicates_by_url():
+    duplicate = NewsItem(title="Dup", url="https://same.com", source="GoogleNews:X", published="", snippet="")
+    with (
+        patch("app.sources.discover_google_news_rss", return_value=[duplicate]),
+        patch("app.sources.discover_newsapi", return_value=[duplicate]),
+        patch("app.sources.discover_edgar_fulltext", return_value=[]),
+    ):
+        items = discover_news("test")
+    assert len(items) == 1
+
+
+def test_discover_news_continues_on_partial_failure():
+    def boom(_q, **_kw):
+        raise RuntimeError("source down")
+
+    with (
+        patch("app.sources.discover_google_news_rss", side_effect=boom),
+        patch("app.sources.discover_newsapi", return_value=[
+            NewsItem(title="N1", url="https://n1.com", source="NewsAPI:X", published="", snippet=""),
+        ]),
+        patch("app.sources.discover_edgar_fulltext", return_value=[]),
+    ):
+        items = discover_news("test")
+    assert len(items) == 1
+    assert items[0]["source"] == "NewsAPI:X"

@@ -2,7 +2,7 @@
 
 ## 1. What Kimika is
 
-A **one-page web app** that runs **every day** and publishes **separate, standalone investment-banking-lens reports**: **one report per deal**, plus **one daily Economy & Markets report** (economy, equities, commodities, debt, currencies). It finds stories from **multiple public sources**, **cross-verifies** every figure, researches deals from primary documents, and posts new reports each morning. Reports are read in the browser — one expandable card per report on the page. It's a daily read for **Rohith and investment banking analysts** to understand what is happening around them: deals, the macroeconomic landscape and policy, and where things are likely heading.
+A **one-page web app** that runs **every day** and publishes **separate, standalone investment-banking-lens reports**: **one report per deal**, plus **five daily market column reports** (Economy, Equities, Commodities, Bonds, Currencies). It pools data from as many public sources as possible, collates them into a dossier, cross-verifies every figure in Python, then synthesises comprehensive reports using Gemini Flash. Reports are read in the browser — one expandable card per report on the page. It's a daily read for **Rohith and investment banking analysts** to understand what is happening around them: deals, the macroeconomic landscape and policy, and where things are likely heading.
 
 - **Brand:** Kimika
 - **Deal focus:** United States, Australia, United Kingdom. No minimum deal size; cover as many deals as possible.
@@ -42,6 +42,7 @@ M&A   |  ECM   |  DCM   |  Economy   |  Equities   |  Commodities   |  Bonds   |
 ### 3.1 Deals: one full report per deal
 - Every deal discovered gets its own full report. The **largest deals by value** are covered first; smaller deals are covered as quota allows (`config.yaml`, `max_full_reports_per_run`).
 - **Prioritise size.** When there are more deals than the free-tier quota allows, keep the biggest deals (by deal value in US$ equivalent) and drop the smallest first. Ongoing deals reappear with an update when they hit a new stage (competing bid, scheme booklet, IER, vote, court approval, completion).
+- **Update existing reports every morning.** On each daily run, re-pool and re-synthesise every ongoing deal report — not just new announcements. New source material (price moves, shareholder disclosures, news coverage, regulatory updates) is incorporated and the report is rewritten. The prior version is archived in version history.
 
 ### 3.2 Daily market columns (five standalone reports per day)
 
@@ -64,13 +65,13 @@ Five separate reports published each day, one per column: **Economy · Equities 
 
 ## 4. Report templates (summary; full detail in `docs/report-templates.md`)
 
-- **M&A (1–2 pages):** deal snapshot · rationale · process & negotiations timeline · valuation (methods, ranges, implied multiples, premium) · structure, terms & financing · advisers · **Market view** · **outlook & scenarios** · bibliography
-- **ECM:** snapshot · why now · process · pricing & discount · underwriting & fees · **Market view** · outlook · bibliography
-- **DCM:** snapshot · credit story · process (IPTs → pricing) · spread & pricing · use of proceeds · **Market view** · outlook · bibliography
+- **M&A (3,500–5,000w, 7–9 pages):** transaction overview + snapshot table · strategic rationale · background to the transaction (negotiation timeline) · valuation analysis (IER/fairness opinion, football field, implied multiples, 2–3 tables) · transaction structure and financing · adviser roles · market reaction and positioning · outlook and scenarios (4 named paths) · bibliography
+- **ECM (2,000–3,000w, 4–5 pages):** transaction overview · use of proceeds and strategic context · execution and process · pricing analysis · market reaction · outlook · bibliography
+- **DCM (2,000–3,000w, 4–5 pages):** transaction overview · credit story · process and bookbuild · pricing analysis · use of proceeds · market reaction and outlook · bibliography
 - **Other:** closest template, adapted (LBO, block trade, restructuring, spin-off)
-- **Daily market columns (5 separate reports):** Economy (macro landscape · policy · outlook & scenarios) · Equities · Commodities · Bonds · Currencies (each: levels/moves table · what moved and why · what the market expects next · bibliography)
-- **Market view:** what the market and commentators think, synthesised from multiple sources: price reaction, arbitrage spread (target price vs offer), shareholder and proxy adviser positions, broker and analyst commentary, credit reaction. Consensus first; dissenting views noted.
-- **Not public?** Say "Not publicly disclosed"; typical process goes under **General context**.
+- **Daily market columns (5 separate reports, 2,500–3,500w each):** Economy (macro landscape · policy · commentator consensus · outlook and scenarios) · Equities · Commodities · Bonds · Currencies (each: summary · levels/moves table · what moved and why · cross-asset links · consensus and positioning · outlook and scenarios · bibliography)
+- **Adaptive structure:** canonical structures are the target. When source material is thin, merge or collapse sections rather than padding. A shorter denser report beats a longer padded one. Reports grow richer as new documents land (scheme booklet, IER, proxy); the version history tracks each update.
+- **Not public?** Collapse to one sentence: "Not yet filed; section will be updated when lodged." Never pad with speculation.
 - **No in-text citations.** Bibliography at the end of each report.
 
 ---
@@ -80,23 +81,15 @@ Five separate reports published each day, one per column: **Economy · Equities 
 Runs **daily at 6:30am Sydney time**. If the laptop was asleep or off, the app runs on next startup.
 
 ```
-Discover → Cross-verify → Pick → Research → Write → Verify → Save (JSON)
+Pool → Collate → Verify (Python) → Style → Synthesise → Save (JSON)
 ```
 
-1. **Discover:** pull candidates from multiple public sources (`docs/sources.md`):
-   - Deals: ASX announcements, SEC EDGAR, UK RNS / Takeover Panel disclosures, several public business news RSS feeds
-   - Economy: Fed, RBA and other central banks, government budget/treasury releases, statistics agencies, FRED, public economist and strategist commentary
-   - Markets: FMP plus at least one independent source (yfinance, FRED, central bank data)
-2. **Cross-verify:**
-   - Market data: ≥2 independent sources must agree (tolerances in `config.yaml`)
-   - News facts: ≥2 independent publishers, or 1 primary source
-   - Deal terms: the primary filing is the source of truth, and news coverage is checked against it
-   - **Conflicts:** search for more sources and go with what they support (primary outranks secondary). If none exist, pick the most authoritative source and record the choice and the reason.
-3. **Pick:** Gemini Flash-Lite classifies everything in batched requests (M&A/ECM/DCM/Other, region, size, stage). Deals are ranked by **deal value (US$ equivalent)**. The largest get full reports up to the daily quota cap. Undisclosed values rank by the company's market cap as a proxy.
-4. **Research:** for full reports, fetch the primary documents and trim to the relevant sections (terms, background/negotiations, IER/fairness opinion summary, financing). For every report, also read **multiple independent commentary sources** to establish the market consensus and the main alternative views.
-5. **Write:** Gemini Flash writes full deal reports and the 5 daily market column reports as structured JSON following the templates; Flash-Lite handles classification and helper summaries.
-6. **Verify:** derived figures computed in Python (`app/finance.py`); stated figures must have a short quote found in the source; every figure gets a status (✅ Verified · ✅ Resolved · 🔁 Recomputed · ❓ Single source), stored in the report's JSON verification log, not printed in the report body.
-7. **Save:** one folder per report, `reports/YYYY-MM-DD/<report-slug>/report.json`, plus `reports/YYYY-MM-DD/index.json` listing the day's reports for the page. Ongoing deals: the report lives under the deal's slug and keeps a version history.
+1. **Pool:** fetch every available public source for the deal or topic (`docs/sources.md`). Deals: ASX announcements, SEC EDGAR, UK RNS/Takeover Panel, scheme booklets, IERs, fairness opinions, news from multiple RSS feeds (Google News, NewsAPI, Yahoo Finance), substantial holder notices. Markets: FMP + yfinance + central bank feeds + FRED + public economist commentary + news RSS. Cast wide: more sources = richer cross-verification and richer prose.
+2. **Collate** (`app/dossier.py`): aggregate into a structured dossier. Label each chunk: source, type (filing/data/news/commentary), authority (primary/secondary), date. Trim documents to relevant sections before any LLM call (terms, negotiation background, IER summary — not whole 200-page booklets).
+3. **Verify** (`app/verify.py`, Python only — no LLM): cross-reference every figure across sources. Market data: ≥2 independent sources must agree (tolerances in `config.yaml`). News facts: ≥2 publishers or 1 primary source. Deal terms: primary filing is truth; news is checked against it. Conflicts: additional sources → go with the majority; primary outranks secondary; if unresolvable, pick the most authoritative and record the choice. Output: `verified_facts` dict + verification log. The LLM receives resolved values only, never raw conflicts.
+4. **Style:** load 2–3 example paragraphs from `app/prompts/examples/` (one per section type: deal snapshot, valuation, macro outlook) and inject into the synthesis prompt as few-shot anchors.
+5. **Synthesise:** Gemini Flash writes full deal reports and the 5 daily market column reports as structured JSON, following the canonical section structure and word count targets in `docs/report-templates.md`. Flash-Lite handles classification and helper summaries. The prompt instructs the model to follow the adaptive structure rules: merge or collapse thin sections, never pad.
+6. **Save:** one folder per report, `reports/YYYY-MM-DD/<report-slug>/report.json`, plus `reports/YYYY-MM-DD/index.json`. Ongoing deals keep version history; each update archives the prior version.
 
 ### Cost: zero (free tiers only)
 - **AI:** Google Gemini API free tier: no billing account, no credit card. Key from Google AI Studio.
@@ -154,13 +147,16 @@ kimika/
 │   ├── main.py             # FastAPI: page, scheduler + catch-up
 │   ├── pipeline.py         # discover → cross-verify → pick → research → write → verify → save
 │   ├── scheduler.py        # APScheduler daily run + missed-run catch-up
-│   ├── sources.py          # ASX, EDGAR, RNS, central banks, FMP, yfinance, FRED, RSS
+│   ├── sources.py          # ASX, EDGAR, RNS, central banks, FMP, yfinance, FRED, RSS, NewsAPI
+│   ├── dossier.py          # Stage 2: collate fetched docs into labelled dossier per report
 │   ├── crosscheck.py       # multi-source agreement + conflict resolution
+│   ├── verify.py           # Stage 3: cross-reference figures in Python → verified_facts dict
 │   ├── fetch.py            # blocklist-enforcing fetcher + cache
 │   ├── finance.py          # all finance calculations
 │   ├── llm.py              # Gemini calls, model routing, quota tracking, 429 back-off
 │   ├── prompts/            # one prompt per report type
-│   └── templates/          # page.html
+│   │   └── examples/       # style anchor paragraphs (deal snapshot, valuation, macro outlook)
+│   └── templates/          # page.html, report.html
 ├── tests/
 └── reports/                # generated (commit 1–2 sample days)
 ```
@@ -173,7 +169,7 @@ kimika/
 1. Scaffold, `config.yaml`, `.env.example`, `.gitignore`
 2. `finance.py` + tests
 3. `fetch.py` (blocklist + cache) + tests, including a test proving an AFR URL is refused
-4. `crosscheck.py` + tests (agreement, tolerance, conflict resolution with a third source, single-source fallback)
+4. `crosscheck.py` + `verify.py` + tests (agreement, tolerance, conflict resolution with a third source, single-source fallback; `verify.py` outputs `verified_facts` dict fed to the LLM)
 5. Discover M&A: SEC EDGAR + ASX + UK RNS
 6. Pick → Research → Write → Verify → Save, for full M&A reports
 7. `llm.py`: Gemini client, model routing, per-model request caps, 429 back-off

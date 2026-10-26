@@ -66,6 +66,15 @@ rns:
   feed_url: "https://www.londonstockexchange.com/exchange/news/market-news/market-news-home.html"
   rate_limit_seconds: 1.0
 
+# Google News RSS — no API key required
+google_news:
+  max_results_per_query: 20
+
+# NewsAPI — free tier: 100 req/day; requires NEWSAPI_KEY in .env; skipped if absent
+newsapi:
+  base_url: "https://newsapi.org/v2/everything"
+  max_results_per_query: 20
+
 # FMP (Financial Modeling Prep) — free plan
 fmp:
   base_url: "https://financialmodelingprep.com/api/v3"

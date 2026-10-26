@@ -2,6 +2,38 @@
 
 Use **multiple independent sources** and cross-verify (rules in `CLAUDE.md`). Primary documents outrank secondary write-ups. News coverage is for discovering stories and confirming facts; deal figures come from the primary filing.
 
+**Cast wide.** For each deal or market topic, run targeted searches across all applicable sources below. More independent sources = better cross-verification and richer reports.
+
+## Wide web search (no-key, free)
+
+These run for every deal and every market topic. Use targeted queries (company names, ticker, deal terms) not broad sweeps.
+
+| Source | How to use | What it gives |
+|---|---|---|
+| **Google News RSS** | `https://news.google.com/rss/search?q=<query>&hl=en` | 10–20 recent articles per query, no key, free |
+| **Yahoo Finance RSS** | `https://finance.yahoo.com/rss/headline?s=<ticker>` | Company news by ticker |
+| **SEC EDGAR full-text search** | `https://efts.sec.gov/LATEST/search-index?q=<query>&dateRange=custom&...` | Full-text search across all filings, free official API |
+| **NewsAPI** | `https://newsapi.org/v2/everything?q=<query>` (free tier: 100 req/day) | Structured news with full content, requires free key (`NEWSAPI_KEY` in `.env`) |
+| **Takeovers Panel (AU)** | Public decisions and orders at takeovers.gov.au | AU deal regulatory decisions |
+| **ACCC merger register** | public.accc.gov.au/MergerRegister | AU competition decisions |
+| **FIRB decision register** | firb.gov.au | AU foreign investment decisions |
+| **Court Connect (AU)** | Scheme court approvals | Supreme Court scheme hearing results |
+| **RBA speech archive** | rba.gov.au/speeches | Governor and board member speeches |
+| **Fed speech archive** | federalreserve.gov/newsevents/speeches | FOMC member speeches |
+| **BoE speech archive** | bankofengland.co.uk/news/speeches | MPC member speeches |
+
+## Style references (for prompt few-shot anchors — `app/prompts/examples/`)
+
+Public documents with IB-quality prose that can be used as style anchors in synthesis prompts. Never reproduce; paraphrase and use only as stylistic reference.
+
+| Type | Source |
+|---|---|
+| M&A valuation methodology | IER excerpts from publicly filed AU scheme booklets (ASX) |
+| Deal narrative prose | ACCC merger determination documents |
+| Macro analysis | RBA Statement on Monetary Policy (rba.gov.au/publications/smp) |
+| Market commentary | BoE Monetary Policy Report (bankofengland.co.uk/monetary-policy-report) |
+| Deal structure and process | UK Rule 2.7 announcement text (RNS) |
+
 ## Deal discovery (US · AU · UK)
 | Region | Primary feeds | Secondary (discovery + confirmation) |
 |---|---|---|

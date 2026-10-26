@@ -1,17 +1,8 @@
-"""Kimika M&A deal discovery — SEC EDGAR, ASX, UK RNS.
+"""Kimika discovery — SEC EDGAR, ASX, UK RNS, Google News RSS, NewsAPI.
 
-Each discover_* function returns a list of RawDeal dicts for the given date.
-A RawDeal is the minimal metadata needed to decide whether to research further:
-  {
-    "title":        str,   # announcement headline
-    "url":          str,   # primary document URL
-    "source":       str,   # "EDGAR" | "ASX" | "RNS"
-    "region":       str,   # "US" | "AU" | "UK"
-    "filing_type":  str,   # e.g. "8-K", "ASX_announcement", "RNS_Rule27"
-    "date":         str,   # ISO date string YYYY-MM-DD
-    "company":      str,   # primary entity name (filer or target)
-    "extra":        dict,  # source-specific metadata (CIK, ticker, etc.)
-  }
+Two return types:
+  RawDeal  — structured filing metadata for deal discovery (EDGAR/ASX/RNS).
+  NewsItem — lightweight news/commentary item for dossier pooling (wide search).
 
 One failed source never stops the run: errors are logged and [] is returned.
 All HTTP goes through app.fetch.fetch().
@@ -20,7 +11,10 @@ All HTTP goes through app.fetch.fetch().
 from __future__ import annotations
 
 import logging
+import re as _re
 import time
+import urllib.parse
+import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from typing import TypedDict
 
@@ -42,6 +36,18 @@ class RawDeal(TypedDict):
     date: str
     company: str
     extra: dict
+
+
+class NewsItem(TypedDict):
+    """Lightweight news/commentary item returned by wide-search sources.
+
+    Used in the dossier pooling stage to gather context for report synthesis.
+    """
+    title: str
+    url: str
+    source: str    # e.g. "GoogleNews:Reuters" | "NewsAPI:Bloomberg" | "EDGAR_fulltext"
+    published: str # date string as returned by the source
+    snippet: str   # brief description or excerpt (max 500 chars)
 
 
 # ---------------------------------------------------------------------------
@@ -518,6 +524,199 @@ def discover_markets_context(target_date: date) -> dict[str, str]:
         "bonds":       bonds[:trim],
         "currencies":  currencies[:trim],
     }
+
+
+# ---------------------------------------------------------------------------
+# Wide web search — Google News RSS (no key)
+# ---------------------------------------------------------------------------
+
+_GOOGLE_NEWS_RSS = "https://news.google.com/rss/search?q={query}&hl=en&gl=US&ceid=US:en"
+
+
+def _strip_html(text: str) -> str:
+    """Remove HTML tags from a string."""
+    return _re.sub(r"<[^>]+>", "", text).strip()
+
+
+def discover_google_news_rss(query: str, max_results: int = 20) -> list[NewsItem]:
+    """Search Google News RSS for articles matching query.
+
+    Returns up to max_results NewsItems. No API key required. Free.
+    Blocked domains are applied later when fetching full article content;
+    here we collect titles, links and snippets from the feed metadata only.
+    """
+    url = _GOOGLE_NEWS_RSS.format(query=urllib.parse.quote(query))
+    try:
+        xml_text = fetch(url)
+    except Exception as exc:
+        logger.warning("Google News RSS failed for %r: %s", query, exc)
+        return []
+
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError as exc:
+        logger.warning("Google News RSS: XML parse error for %r: %s", query, exc)
+        return []
+
+    channel = root.find("channel")
+    if channel is None:
+        return []
+
+    items: list[NewsItem] = []
+    for item in channel.findall("item")[:max_results]:
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        pub_date = (item.findtext("pubDate") or "").strip()
+        description = _strip_html(item.findtext("description") or "")[:500]
+        source_el = item.find("source")
+        source_name = (source_el.text or "").strip() if source_el is not None else "Google News"
+
+        if title and link:
+            items.append(NewsItem(
+                title=title,
+                url=link,
+                source=f"GoogleNews:{source_name}",
+                published=pub_date,
+                snippet=description,
+            ))
+
+    logger.info("Google News RSS: %d articles for %r", len(items), query)
+    return items
+
+
+# ---------------------------------------------------------------------------
+# Wide web search — NewsAPI (free tier: 100 req/day, requires NEWSAPI_KEY)
+# ---------------------------------------------------------------------------
+
+_NEWSAPI_URL = "https://newsapi.org/v2/everything"
+
+
+def discover_newsapi(query: str, max_results: int = 20) -> list[NewsItem]:
+    """Search NewsAPI for articles matching query.
+
+    Requires NEWSAPI_KEY environment variable. Skips gracefully if absent.
+    Free tier allows 100 requests/day.
+    """
+    import os
+    api_key = os.environ.get("NEWSAPI_KEY", "")
+    if not api_key:
+        logger.debug("NewsAPI: NEWSAPI_KEY not set — skipping")
+        return []
+
+    params = urllib.parse.urlencode({
+        "q": query,
+        "pageSize": min(max_results, 100),
+        "sortBy": "publishedAt",
+        "language": "en",
+        "apiKey": api_key,
+    })
+    try:
+        data = fetch_json(f"{_NEWSAPI_URL}?{params}")
+    except Exception as exc:
+        logger.warning("NewsAPI failed for %r: %s", query, exc)
+        return []
+
+    if data.get("status") != "ok":
+        logger.warning("NewsAPI: status %r for %r", data.get("status"), query)
+        return []
+
+    items: list[NewsItem] = []
+    for art in data.get("articles", []):
+        title = (art.get("title") or "").strip()
+        url_str = (art.get("url") or "").strip()
+        if not title or not url_str:
+            continue
+        source_name = ((art.get("source") or {}).get("name") or "NewsAPI").strip()
+        items.append(NewsItem(
+            title=title,
+            url=url_str,
+            source=f"NewsAPI:{source_name}",
+            published=(art.get("publishedAt") or "").strip(),
+            snippet=(art.get("description") or "")[:500],
+        ))
+
+    logger.info("NewsAPI: %d articles for %r", len(items), query)
+    return items
+
+
+# ---------------------------------------------------------------------------
+# Wide web search — EDGAR full-text (any query, any form type)
+# ---------------------------------------------------------------------------
+
+_EDGAR_FULLTEXT_URL = "https://efts.sec.gov/LATEST/search-index"
+
+
+def discover_edgar_fulltext(query: str, max_results: int = 10) -> list[NewsItem]:
+    """Full-text search EDGAR for filings mentioning query.
+
+    Unlike discover_edgar() which is M&A-specific, this searches any
+    form type — useful for pooling all recent filings about a specific
+    company or deal when building a dossier.
+    Rate limit: 0.5s between requests per EDGAR ToS.
+    """
+    params = urllib.parse.urlencode({"q": f'"{query}"'})
+    url = f"{_EDGAR_FULLTEXT_URL}?{params}"
+    try:
+        data = fetch_json(url)
+    except Exception as exc:
+        logger.warning("EDGAR full-text failed for %r: %s", query, exc)
+        return []
+
+    items: list[NewsItem] = []
+    hits = data.get("hits", {}).get("hits", [])
+    for hit in hits[:max_results]:
+        src = hit.get("_source", {})
+        entity = src.get("entity_name", "Unknown")
+        form_type = src.get("form_type", "filing")
+        file_date = src.get("file_date", "")
+        cik = src.get("cik", "")
+        filing_url = (
+            f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type={form_type}"
+            if cik else "https://www.sec.gov/cgi-bin/browse-edgar"
+        )
+        items.append(NewsItem(
+            title=f"{entity} — {form_type} ({file_date})",
+            url=filing_url,
+            source="EDGAR_fulltext",
+            published=file_date,
+            snippet=f"{form_type} filing by {entity}",
+        ))
+        time.sleep(cfg["edgar"]["rate_limit_seconds"])
+
+    logger.info("EDGAR full-text: %d filings for %r", len(items), query)
+    return items
+
+
+# ---------------------------------------------------------------------------
+# Combined news discovery — all wide-search sources for a query
+# ---------------------------------------------------------------------------
+
+def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem]:
+    """Pool news and commentary from all wide-search sources for a query.
+
+    Combines Google News RSS + NewsAPI + EDGAR full-text. A failure in any
+    single source is logged and skipped; others still run.
+    Results are deduplicated by URL.
+    """
+    results: list[NewsItem] = []
+    seen_urls: set[str] = set()
+
+    sources = [
+        ("GoogleNews", lambda q: discover_google_news_rss(q, max_results_per_source)),
+        ("NewsAPI",    lambda q: discover_newsapi(q, max_results_per_source)),
+        ("EDGAR",      lambda q: discover_edgar_fulltext(q, max_results_per_source // 2)),
+    ]
+    for name, fn in sources:
+        try:
+            for item in fn(query):
+                if item["url"] not in seen_urls:
+                    seen_urls.add(item["url"])
+                    results.append(item)
+        except Exception as exc:
+            logger.error("%s news discovery raised unexpectedly: %s", name, exc)
+
+    logger.info("discover_news: %d unique items for %r", len(results), query)
+    return results
 
 
 # ---------------------------------------------------------------------------
