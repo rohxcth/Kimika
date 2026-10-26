@@ -352,6 +352,11 @@ def _write_market_reports(date_str: str) -> list[ReportData]:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(description="Run the Kimika pipeline")
     parser.add_argument("--now", action="store_true", help="Run for today")

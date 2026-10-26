@@ -1113,8 +1113,6 @@ def discover_news(query: str, max_results_per_source: int = 20) -> list[NewsItem
     sources = [
         ("GoogleNews",   lambda q: discover_google_news_rss(q, max_results_per_source)),
         ("NewsAPI",      lambda q: discover_newsapi(q, max_results_per_source)),
-        ("PRNewswire",   lambda q: discover_prnewswire(q, max_results_per_source // 2)),
-        ("BusinessWire", lambda q: discover_businesswire(q, max_results_per_source // 2)),
         ("EDGAR",        lambda q: discover_edgar_fulltext(q, max_results_per_source // 2)),
     ]
     for name, fn in sources:
