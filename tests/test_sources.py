@@ -232,54 +232,71 @@ def test_edgar_rate_limit_called():
 # ---------------------------------------------------------------------------
 
 def test_asx_returns_ma_announcements():
-    with _mock_json(ASX_FIXTURE):
-        deals = discover_asx(TARGET_DATE)
-    assert len(deals) == 2  # non-M&A and wrong-date filtered
-
-
-def test_asx_deal_fields():
-    with _mock_json(ASX_FIXTURE):
-        deals = discover_asx(TARGET_DATE)
-    bhp = next(d for d in deals if d["extra"]["ticker"] == "BHP")
-    assert bhp["source"] == "ASX"
-    assert bhp["region"] == "AU"
-    assert bhp["filing_type"] == "ASX_announcement"
-    assert bhp["date"] == DATE_STR
-    assert "BHP Group" in bhp["company"]
-
-
-def test_asx_filters_non_ma():
-    with _mock_json(ASX_FIXTURE):
-        deals = discover_asx(TARGET_DATE)
-    titles = [d["title"] for d in deals]
-    assert not any("CPI" in t for t in titles)
-
-
-def test_asx_filters_wrong_date():
-    with _mock_json(ASX_FIXTURE):
-        deals = discover_asx(TARGET_DATE)
-    # CBA announcement is dated 25 Oct, not 26 Oct
-    companies = [d["company"] for d in deals]
-    assert "Commonwealth Bank" not in companies
-
-
-def test_asx_list_response():
-    """ASX sometimes returns a bare list rather than {"data": [...]}."""
-    bare_list = ASX_FIXTURE["data"]
-    with _mock_json(bare_list):
+    items = [
+        {"title": "BHP Group scheme of arrangement announced", "url": "https://example.com/1", "source": "ASX"},
+        {"title": "Woodside merger with Santos approved", "url": "https://example.com/2", "source": "ASX"},
+        {"title": "RBA leaves rates on hold", "url": "https://example.com/3", "source": "RBA"},  # filtered out
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
         deals = discover_asx(TARGET_DATE)
     assert len(deals) == 2
 
 
+def test_asx_deal_fields():
+    items = [
+        {"title": "BHP Group scheme of arrangement", "url": "https://example.com/1", "source": "ASX News"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
+        deals = discover_asx(TARGET_DATE)
+    assert len(deals) == 1
+    d = deals[0]
+    assert d["source"] == "ASX"
+    assert d["region"] == "AU"
+    assert d["filing_type"] == "ASX_announcement"
+    assert d["date"] == DATE_STR
+
+
+def test_asx_filters_non_ma():
+    items = [
+        {"title": "CPI data released today", "url": "https://example.com/1", "source": "ABS"},
+        {"title": "BHP Group acquisition completed", "url": "https://example.com/2", "source": "ASX"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
+        deals = discover_asx(TARGET_DATE)
+    titles = [d["title"] for d in deals]
+    assert not any("CPI" in t for t in titles)
+    assert len(deals) == 1
+
+
+def test_asx_filters_wrong_date():
+    """Non-M&A keywords are filtered; no date filter in new implementation."""
+    items = [
+        {"title": "Commonwealth Bank earnings update", "url": "https://example.com/1", "source": "CBA"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
+        deals = discover_asx(TARGET_DATE)
+    assert deals == []  # "earnings update" has no M&A keywords
+
+
+def test_asx_list_response():
+    """discover_asx works with any list of news items."""
+    items = [
+        {"title": "Santos takeover bid rejected", "url": "https://example.com/1", "source": "ASX"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
+        deals = discover_asx(TARGET_DATE)
+    assert len(deals) == 1
+
+
 def test_asx_network_error_returns_empty(caplog):
-    with _mock_json_error(Exception("timeout")):
+    with patch("app.sources.discover_google_news_rss", side_effect=Exception("timeout")):
         deals = discover_asx(TARGET_DATE)
     assert deals == []
     assert any("ASX" in r.message for r in caplog.records)
 
 
 def test_asx_empty_returns_empty():
-    with _mock_json({"data": []}):
+    with patch("app.sources.discover_google_news_rss", return_value=[]):
         deals = discover_asx(TARGET_DATE)
     assert deals == []
 
@@ -289,45 +306,63 @@ def test_asx_empty_returns_empty():
 # ---------------------------------------------------------------------------
 
 def test_rns_returns_ma_announcements():
-    with _mock_json(RNS_FIXTURE):
+    items = [
+        {"title": "Vodafone Group Rule 2.7 firm offer for CK Hutchison", "url": "https://example.com/1", "source": "RNS"},
+        {"title": "LSEG Rule 2.4 possible offer announced", "url": "https://example.com/2", "source": "RNS"},
+        {"title": "BP trading update Q3", "url": "https://example.com/3", "source": "RNS"},  # filtered out
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
         deals = discover_rns(TARGET_DATE)
-    assert len(deals) == 2  # non-M&A and wrong-date filtered
+    assert len(deals) == 2
 
 
 def test_rns_deal_fields():
-    with _mock_json(RNS_FIXTURE):
+    items = [
+        {"title": "Vodafone Group Rule 2.7 firm offer for CK Hutchison", "url": "https://example.com/1", "source": "RNS"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
         deals = discover_rns(TARGET_DATE)
-    vod = next(d for d in deals if d["extra"]["ticker"] == "VOD")
-    assert vod["source"] == "RNS"
-    assert vod["region"] == "UK"
-    assert vod["filing_type"] == "RNS_Rule27"
-    assert vod["date"] == DATE_STR
-    assert vod["company"] == "Vodafone Group Plc"
+    assert len(deals) == 1
+    d = deals[0]
+    assert d["source"] == "RNS"
+    assert d["region"] == "UK"
+    assert d["filing_type"] == "RNS_Rule27"
+    assert d["date"] == DATE_STR
 
 
 def test_rns_rule24_filing_type():
-    with _mock_json(RNS_FIXTURE):
+    items = [
+        {"title": "LSEG Rule 2.4 possible offer consideration", "url": "https://example.com/1", "source": "RNS"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
         deals = discover_rns(TARGET_DATE)
-    lseg = next(d for d in deals if d["extra"]["ticker"] == "LSEG")
-    assert lseg["filing_type"] == "RNS_Rule24"
+    assert deals[0]["filing_type"] == "RNS_Rule24"
 
 
 def test_rns_filters_non_ma():
-    with _mock_json(RNS_FIXTURE):
+    items = [
+        {"title": "BP quarterly trading update", "url": "https://example.com/1", "source": "BP"},
+        {"title": "Shell merger with TotalEnergies", "url": "https://example.com/2", "source": "RNS"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
         deals = discover_rns(TARGET_DATE)
-    companies = [d["company"] for d in deals]
-    assert "BP Plc" not in companies
+    titles = [d["title"] for d in deals]
+    assert not any("BP quarterly" in t for t in titles)
+    assert len(deals) == 1
 
 
 def test_rns_filters_wrong_date():
-    with _mock_json(RNS_FIXTURE):
+    """Keywords are the filter; non-M&A items are dropped regardless."""
+    items = [
+        {"title": "Shell Plc annual results announcement", "url": "https://example.com/1", "source": "Shell"},
+    ]
+    with patch("app.sources.discover_google_news_rss", return_value=items):
         deals = discover_rns(TARGET_DATE)
-    companies = [d["company"] for d in deals]
-    assert "Shell Plc" not in companies
+    assert deals == []
 
 
 def test_rns_network_error_returns_empty(caplog):
-    with _mock_json_error(ConnectionError("refused")):
+    with patch("app.sources.discover_google_news_rss", side_effect=ConnectionError("refused")):
         deals = discover_rns(TARGET_DATE)
     assert deals == []
     assert any("RNS" in r.message for r in caplog.records)

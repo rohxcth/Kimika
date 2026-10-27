@@ -11,10 +11,10 @@ schedule:
 # Check current limits at https://aistudio.google.com/  — update here, not in code.
 gemini:
   # Flash: full deal reports and Economy & Markets report
-  flash_model: "gemini-2.0-flash"
+  flash_model: "gemini-3.8-flash"
   flash_daily_cap: 1500        # free-tier requests/day (check AI Studio)
   # Flash-Lite: discovery, classification, deal wrap, helper summaries
-  flash_lite_model: "gemini-2.0-flash-lite"
+  flash_lite_model: "gemini-3.5-flash-lite"
   flash_lite_daily_cap: 1500   # free-tier requests/day (check AI Studio)
   # Back-off on 429: wait this many seconds before retrying (doubles each retry)
   backoff_base_seconds: 60

@@ -246,52 +246,50 @@ def fetch_edgar_document(index_url: str) -> str:
 # ASX discovery
 # ---------------------------------------------------------------------------
 
-_ASX_FEED_URL = "https://www.asx.com.au/asx/1/announcement?count=50&market_sensitive=true"
+# ASX announcements are discovered via Google News RSS since the native
+# ASX JSON API (asx.com.au/asx/1/announcement) now returns 404.
+_ASX_GNEWS_QUERY = (
+    "ASX announcement scheme acquisition takeover merger placement site:asx.com.au"
+)
+_ASX_KEYWORDS = {
+    "scheme", "acqui", "takeover", "merger", "bid", "offer", "placement",
+    "capital raising", "entitlement", "notes", "bonds", "hybrid",
+}
 
 
 def discover_asx(target_date: date) -> list[RawDeal]:
-    """Fetch ASX market-sensitive announcements for target_date and filter for M&A.
+    """Discover AU deals via Google News RSS (ASX API retired).
 
-    The ASX feed returns today's announcements; we filter by date and
-    M&A keywords in the headline.
+    Searches Google News for ASX announcements; filters by M&A/ECM/DCM
+    keywords; returns RawDeal objects for the LLM to classify.
     """
     date_str = target_date.isoformat()
     try:
-        data = fetch_json(_ASX_FEED_URL)
+        items = discover_google_news_rss(_ASX_GNEWS_QUERY, max_results=20)
     except Exception as exc:
         logger.warning("ASX discovery failed for %s: %s", date_str, exc)
         return []
 
     deals: list[RawDeal] = []
-    announcements = data if isinstance(data, list) else data.get("data", [])
-
-    for ann in announcements:
-        # Date filter: only announcements from target_date
-        ann_date = _parse_asx_date(ann.get("date", ""))
-        if ann_date and ann_date.date() != target_date:
+    for item in items:
+        title = item.get("title", "")
+        if not any(kw in title.lower() for kw in _ASX_KEYWORDS):
             continue
-
-        title = ann.get("header", ann.get("title", ""))
-        if not _is_ma_asx(title):
-            continue
-
-        ticker = ann.get("code", "")
-        doc_url = ann.get("url", "")
-        if not doc_url:
-            doc_url = f"https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=true"
-
+        # Strip "GoogleNews:<publisher>" prefix from source field
+        raw_source = item.get("source", "")
+        company = raw_source.split(":", 1)[-1].strip() if ":" in raw_source else raw_source
         deals.append(RawDeal(
             title=title,
-            url=doc_url,
+            url=item.get("url", ""),
             source="ASX",
             region="AU",
             filing_type="ASX_announcement",
             date=date_str,
-            company=ann.get("issuer_full_name", ticker),
-            extra={"ticker": ticker, "id": ann.get("id", "")},
+            company=company,
+            extra={},
         ))
 
-    logger.info("ASX: found %d M&A announcements on %s", len(deals), date_str)
+    logger.info("ASX: found %d candidates on %s", len(deals), date_str)
     return deals
 
 
@@ -309,60 +307,50 @@ def _parse_asx_date(date_str: str) -> datetime | None:
 # UK RNS discovery
 # ---------------------------------------------------------------------------
 
-# LSE provides RNS data via a public JSON API used by their news page
-_RNS_API_URL = (
-    "https://api.londonstockexchange.com/api/gw/lse/instruments/alldata/newsarticles"
-    "?categories=REG&maxResults=100"
+# RNS announcements are discovered via Google News RSS since the LSE API
+# (api.londonstockexchange.com) now returns 403.
+_RNS_GNEWS_QUERY = (
+    "UK RNS Rule 2.7 Rule 2.4 scheme acquisition takeover firm offer"
 )
+_RNS_KEYWORDS = {
+    "rule 2.7", "rule 2.4", "firm offer", "firm intention", "scheme",
+    "acqui", "takeover", "merger", "bid", "offer for", "placement",
+    "notes", "bonds",
+}
 
 
 def discover_rns(target_date: date) -> list[RawDeal]:
-    """Fetch UK RNS regulatory announcements for target_date and filter for M&A.
+    """Discover UK deals via Google News RSS (LSE RNS API blocked).
 
-    Looks for Rule 2.4 (possible offer) and Rule 2.7 (firm offer) announcements
-    plus generic M&A keywords in the headline.
+    Searches Google News for UK regulatory announcements; filters by
+    M&A/ECM/DCM keywords; returns RawDeal objects for the LLM to classify.
     """
     date_str = target_date.isoformat()
     try:
-        data = fetch_json(_RNS_API_URL)
+        items = discover_google_news_rss(_RNS_GNEWS_QUERY, max_results=20)
     except Exception as exc:
         logger.warning("RNS discovery failed for %s: %s", date_str, exc)
         return []
 
     deals: list[RawDeal] = []
-    articles = data if isinstance(data, list) else data.get("articles", data.get("content", []))
-
-    for art in articles:
-        # Date filter
-        pub_date = _parse_rns_date(art.get("publishedDate", art.get("date", "")))
-        if pub_date and pub_date.date() != target_date:
+    for item in items:
+        title = item.get("title", "")
+        if not any(kw in title.lower() for kw in _RNS_KEYWORDS):
             continue
-
-        headline = art.get("headline", art.get("title", ""))
-        category = art.get("category", art.get("type", ""))
-        if not _is_ma_rns(headline, category):
-            continue
-
-        # Determine filing type from category / headline
-        filing_type = _rns_filing_type(headline, category)
-        company = art.get("companyName", art.get("issuer", "Unknown"))
-        ticker = art.get("tidm", art.get("ticker", ""))
-        doc_url = art.get("url", art.get("link", ""))
-        if not doc_url and ticker:
-            doc_url = f"https://www.londonstockexchange.com/exchange/news/market-news/market-news-detail/{ticker}/{art.get('id','')}.html"
-
+        raw_source = item.get("source", "")
+        company = raw_source.split(":", 1)[-1].strip() if ":" in raw_source else raw_source
         deals.append(RawDeal(
-            title=headline,
-            url=doc_url,
+            title=title,
+            url=item.get("url", ""),
             source="RNS",
             region="UK",
-            filing_type=filing_type,
+            filing_type=_rns_filing_type(title, ""),
             date=date_str,
             company=company,
-            extra={"ticker": ticker, "id": art.get("id", ""), "category": category},
+            extra={},
         ))
 
-    logger.info("RNS: found %d M&A announcements on %s", len(deals), date_str)
+    logger.info("RNS: found %d candidates on %s", len(deals), date_str)
     return deals
 
 
